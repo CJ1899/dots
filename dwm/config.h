@@ -28,14 +28,16 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	 */
 
-	/* class     instance  title           tags mask  isfloating  isterminal  noswallow  monitor */
-/*	{ "Gimp",    NULL,     NULL,            0,         1,          0,           0,        -1 }, */
-	{ "Firefox", NULL,     NULL,            1 << 8,    0,          0,          -1,        -1 },
-	{ "Arandr",  NULL,     NULL,            0,         1,          0,          -1,        -1 },
-	{ TERMCLASS, NULL,     NULL,            0,         0,          1,           0,        -1 },
-	{ NULL,      NULL,     "Event Tester",  0,         0,          0,           1,        -1 }, /* xev */
-	{ NULL,      NULL,     "lf",            0,         1,          0,          -1,        -1 }, /* lf */
-	{ NULL,      NULL,     "sudo",            0,         1,          0,          -1,        -1 },
+	/* class           instance  title           tags mask   isfloating  isterminal  noswallow  monitor */
+/*	{ "Gimp",          NULL,     NULL,            0,          1,          0,           0,        -1 }, */
+	{ "Firefox",       NULL,     NULL,            1 << 8,     0,          0,          -1,        -1 },
+//	{ "qBittorrent",   NULL,     NULL,            1 << 11,    0,          0,          -1,        -1 },
+	{ "LibreWolf",     NULL,     NULL,            0,          0,          0,          -1,        -1 },
+	{ "Arandr",        NULL,     NULL,            0,          1,          0,          -1,        -1 },
+	{ TERMCLASS,       NULL,     NULL,            0,          0,          1,           0,        -1 },
+	{ NULL,            NULL,     "Event Tester",  0,          0,          0,           1,        -1 }, /* xev */
+	{ NULL,            NULL,     "lf",            0,          1,          0,          -1,        -1 }, /* lf */
+	{ NULL,            NULL,     "sudo",          0,          1,          0,          -1,        -1 },
 };
 
 static const float mfact     = 0.50; /* factor of master area size [0.05..0.95] */
@@ -103,6 +105,8 @@ static const Key keys[] = {
 	{ MODKEY,                  XK_r,      spawn, {.v = (const char*[]){ TERMINAL, "sudo", "htop",   NULL } } },
 	{ MODKEY,		   XK_n,      spawn, {.v = (const char*[]){ TERMINAL,  "nvim", NULL } } },
 	{ MODKEY,                  XK_g,      spawn, {.v = (const char*[]){ "gedit", NULL } } },
+	{ MODKEY,                  XK_x,      spawn, {.v = (const char*[]){ "qbittorrent", NULL } } },
+	{ MODKEY,                  XK_c,      spawn, {.v = (const char*[]){ TERMINAL, NULL } } },
 	{ MODKEY,                  XK_Home,   spawn, {.v = (const char*[]){ "/home/pc/scripts/layout", NULL } } },
 
 
