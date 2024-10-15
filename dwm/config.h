@@ -106,7 +106,8 @@ static const Key keys[] = {
 	{ MODKEY,		   XK_n,      spawn, {.v = (const char*[]){ TERMINAL,  "nvim", NULL } } },
 	{ MODKEY,                  XK_g,      spawn, {.v = (const char*[]){ "gedit", NULL } } },
 	{ MODKEY,                  XK_x,      spawn, {.v = (const char*[]){ "qbittorrent", NULL } } },
-	{ MODKEY,                  XK_c,      spawn, {.v = (const char*[]){ "/home/pc/scripts/wall", NULL } } },
+	{ MODKEY,                  XK_c,      spawn, {.v = (const char*[]){ "/home/pc/scripts/s1", NULL } } },
+	{ MODKEY|SHIFT,            XK_c,      spawn, {.v = (const char*[]){ "/home/pc/scripts/s2", NULL } } },
 	{ MODKEY,                  XK_Home,   spawn, {.v = (const char*[]){ "/home/pc/scripts/layout", NULL } } },
 
 
