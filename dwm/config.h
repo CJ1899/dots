@@ -134,9 +134,9 @@ static const Key keys[] = {
 	{ 0,                       XF86XK_Display,  spawn, {.v = (const char*[]){ "arandr", NULL } } },
 	{ 0,                       XF86XK_LaunchA,  spawn, {.v = (const char*[]){ "thunderbird", NULL } } },
 
-	{ MODKEY,                  XK_apostrophe,   spawn, {.v = (const char*[]){ TERMINAL,  "ncmpcpp", NULL } } },
-	{ ALTKEY,                  XK_apostrophe,   spawn, {.v = (const char*[]){  "ario", NULL } } },
-	{ MODKEY|SHIFT,            XK_apostrophe,   spawn, {.v = (const char*[]){ "mpc", "update", NULL } } },
+	{ MODKEY,                  XK_e,            spawn, {.v = (const char*[]){ TERMINAL,  "ncmpcpp", NULL } } },
+	{ ALTKEY,                  XK_e,            spawn, {.v = (const char*[]){  "ario", NULL } } },
+	{ MODKEY|SHIFT,            XK_e,            spawn, {.v = (const char*[]){ "mpc", "update", NULL } } },
         { MODKEY,                  XK_bracketleft,  spawn, {.v = (const char*[]){ "mpc", "prev", NULL } } },
         { MODKEY|SHIFT,            XK_bracketleft,  spawn, {.v = (const char*[]){ "mpc", "seek", "-5", NULL } } },
         { MODKEY,                  XK_bracketright, spawn, {.v = (const char*[]){ "mpc", "toggle", NULL } } },
@@ -161,7 +161,7 @@ static const Key keys[] = {
         { MODKEY|SHIFT,                 XK_q,           bulkill,            {.ui = 1} },
         { MODKEY,                       XK_Prior,       shiftview,          {.i = -1} },
         { MODKEY,                       XK_Next,        shiftview,          {.i = +1} },
-	{ MODKEY|SHIFT,                 XK_e,           quit,                     {0} },
+	{ MODKEY|CONTROL,               XK_BackSpace,   quit,                     {0} },
 
 
 	{ MODKEY,                   XK_t,      setlayout,          {.v = &layouts[0]}  },
