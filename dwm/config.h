@@ -111,10 +111,12 @@ static const Key keys[] = {
 	{ MODKEY,                  XK_Home,   spawn, {.v = (const char*[]){ "/home/pc/scripts/layout", NULL } } },
 
 
-	{ 0,                       XF86XK_MonBrightnessUp,     spawn, {.v = (const char*[]){ "xbacklight", "+10", NULL } } },
+	{ 0,                       XF86XK_MonBrightnessUp,     spawn, {.v = (const char*[]){ "brightness", "up", NULL } } },
+       /*{ 0,                      XF86XK_MonBrightnessUp,     spawn, {.v = (const char*[]){ "xbacklight", "+10", NULL } } },*/
 	{ MODKEY|SHIFT,            XF86XK_MonBrightnessUp,     spawn, {.v = (const char*[]){ "xbacklight", "+1", NULL } } },
         { MODKEY,                  XF86XK_MonBrightnessUp,     spawn, {.v = (const char*[]){ "xbacklight", "=", "100", NULL } } },
-        { 0,                       XF86XK_MonBrightnessDown,   spawn, {.v = (const char*[]){ "xbacklight", "-10", NULL } } },
+        { 0,                       XF86XK_MonBrightnessDown,   spawn, {.v = (const char*[]){ "brightness", "down", NULL } } },
+      /*{ 0,                       XF86XK_MonBrightnessDown,   spawn, {.v = (const char*[]){ "xbacklight", "-10", NULL } } },*/
         { MODKEY|SHIFT,            XF86XK_MonBrightnessDown,   spawn, {.v = (const char*[]){ "xbacklight", "-1", NULL } } },
         { MODKEY,                  XF86XK_MonBrightnessDown,   spawn, {.v = (const char*[]){ "xbacklight", "=", "1", NULL } } },
     	{ 0,                       XF86XK_AudioLowerVolume,    spawn, {.v = (const char*[]){ "volume", "down", NULL } } },
