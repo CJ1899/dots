@@ -124,8 +124,9 @@ static const Key keys[] = {
     	{ 0,                       XF86XK_AudioRaiseVolume,    spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Master", "5%+",     NULL } } },
 	{ MODKEY,                  XF86XK_AudioRaiseVolume,    spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Master", "1%+", NULL } } },
 	{ 0,                       XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Capture", "toggle", NULL } } },
-	{ MODKEY,                  XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "sudo", "shutdown", "now", NULL } } },
-	{ MODKEY|SHIFT,            XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "reboot", NULL } } },
+	{ MODKEY,                  XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "rofi", "-show", "powermenu", "-modi", "powermenu:rofi-power-menu", NULL } } },
+/*	{ MODKEY,                  XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "sudo", "shutdown", "now", NULL } } },
+	{ MODKEY|SHIFT,            XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "reboot", NULL } } },*/
 
 	{ 0,                       XF86XK_Tools,    spawn, {.v = (const char*[]){"lxappearance", NULL} } },
 	{ 0,                       XF86XK_Explorer, spawn, {.v = (const char*[]){"nitrogen", NULL } } },
