@@ -85,7 +85,6 @@ void redraw(void);
 void tfulldirt(void);
 void draw(void);
 
-void newterm(const Arg *);
 void externalpipe(const Arg *);
 void kscrolldown(const Arg *);
 void kscrollup(const Arg *);
