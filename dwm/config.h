@@ -106,8 +106,9 @@ static const Key keys[] = {
 	{ MODKEY,		   XK_n,      spawn, {.v = (const char*[]){ TERMINAL,  "nvim", NULL } } },
 	{ MODKEY,                  XK_g,      spawn, {.v = (const char*[]){ "gedit", NULL } } },
 	{ MODKEY,                  XK_x,      spawn, {.v = (const char*[]){ "qbittorrent", NULL } } },
-	{ MODKEY,                  XK_c,      spawn, {.v = (const char*[]){ "/home/pc/scripts/s2", NULL } } },
-//	{ MODKEY|SHIFT,            XK_c,      spawn, {.v = (const char*[]){ "/home/pc/scripts/rw.sh", NULL } } },
+	{ MODKEY,                  XK_c,      spawn, {.v = (const char*[]){ "/home/pc/scripts/s1", NULL } } },
+	{ MODKEY|SHIFT,            XK_c,      spawn, {.v = (const char*[]){ "/home/pc/scripts/s1", "b", NULL } } },
+	{ MODKEY,                  XK_m,      spawn, {.v = (const char*[]){ "/home/pc/scripts/s2", NULL } } },
 	{ MODKEY,                  XK_Home,   spawn, {.v = (const char*[]){ "/home/pc/scripts/layout", NULL } } },
 
 
@@ -134,8 +135,7 @@ static const Key keys[] = {
 	{ MODKEY|SHIFT,            XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "reboot", NULL } } },*/
 
 	{ 0,                       XF86XK_Tools,    spawn, {.v = (const char*[]){"lxappearance", NULL} } },
-	{ 0,                       XF86XK_Explorer, spawn, {.v = (const char*[]){"/home/pc/scripts/s1", NULL } } },
-	{ MODKEY,                   XF86XK_Explorer, spawn, {.v = (const char*[]){"nitrogen", NULL } } },
+	{ 0,                       XF86XK_Explorer, spawn, {.v = (const char*[]){"nitrogen", NULL } } },
 	{ 0,                       XK_Print,        spawn, {.v = (const char*[]){ "scrot", "/home/pc/Pictures/scr/1.jpg", NULL } } },
 	{ 0,                       XF86XK_Search,   spawn, {.v = (const char*[]){ "fsearch", NULL } } },
 	{ 0,                       XF86XK_Display,  spawn, {.v = (const char*[]){ "arandr", NULL } } },
