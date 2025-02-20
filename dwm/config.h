@@ -108,8 +108,11 @@ static const Key keys[] = {
 	{ MODKEY,                  XK_g,      spawn, {.v = (const char*[]){ "qbittorrent", NULL } } },
 	{ MODKEY,                  XK_c,      spawn, {.v = (const char*[]){ "s", NULL } } },
 	{ MODKEY,                  XK_x,      spawn, {.v = (const char*[]){ "s", "-b", NULL } } },
-	{ MODKEY|SHIFT,            XK_c,      spawn, {.v = (const char*[]){ "s", "-r", NULL } } },
+	{ MODKEY|CONTROL|SHIFT,    XK_c,      spawn, {.v = (const char*[]){ "s", "-r", NULL } } },
 	{ MODKEY,                  XK_m,      spawn, {.v = (const char*[]){ "/home/pc/scripts/s2", NULL } } },
+	{ MODKEY|SHIFT,            XK_c,      spawn, {.v = (const char*[]){ "s2", NULL } } },
+	{ MODKEY|SHIFT,            XK_x,      spawn, {.v = (const char*[]){ "s2", "-b", NULL } } },
+	{ MODKEY|CONTROL,          XK_c,      spawn, {.v = (const char*[]){ "s2", "-r", NULL } } },
 	{ MODKEY,                  XK_Home,   spawn, {.v = (const char*[]){ "/home/pc/scripts/layout", NULL } } },
 
 
