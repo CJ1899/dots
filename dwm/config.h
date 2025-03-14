@@ -2,7 +2,7 @@
 #define TERMCLASS "St"
 #define BROWSER "firefox"
 
-static const unsigned int borderpx  = 0;        /* border pixel of windows */
+static const unsigned int borderpx  = 3;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const unsigned int gappih    = 25;       /* horiz inner gap between windows */
 static const unsigned int gappiv    = 25;       /* vert inner gap between windows */
@@ -20,7 +20,22 @@ static const char dmenufont[]       = "JetBrainsMono:size=7";
 static unsigned int baralpha        = 0xb0;
 static unsigned int borderalpha     = OPAQUE;
 
-static const char *tags[] = { "", "", "", "", "", "", "", "", "", "", "", "", ""};
+//static const char *tags[] = { "", "", "", "", "", "", "", "", "", "", "", "", ""};
+static const char *tags[] = {
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+};
 
 static const Rule rules[] = {
 	/* xprop(1):
@@ -45,7 +60,8 @@ static const int nmaster     = 1;    /* number of clients in master area */
 static const int resizehints = 0;    /* 1 means respect size hints in tiled resizals */
 static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen window */
 
-#include "themes/def.h"
+//#include "themes/def.h"
+#include "themes/pinkt.h"
 
 static const unsigned int stairpx   = 70;       /* depth of the stairs layout */
 static const int stairdirection     = 1;        /* 0: left-aligned, 1: right-aligned */
@@ -148,12 +164,12 @@ static const Key keys[] = {
 	{ MODKEY,                  XK_e,            spawn, {.v = (const char*[]){ TERMINAL,  "ncmpcpp", NULL } } },
 	{ ALTKEY,                  XK_e,            spawn, {.v = (const char*[]){  "ario", NULL } } },
 	{ MODKEY|SHIFT,            XK_e,            spawn, {.v = (const char*[]){ "mpc", "update", NULL } } },
-        { MODKEY,                  XK_bracketleft,  spawn, {.v = (const char*[]){ "mpc", "prev", NULL } } },
-        { MODKEY|SHIFT,            XK_bracketleft,  spawn, {.v = (const char*[]){ "mpc", "seek", "-5", NULL } } },
+        { MODKEY|SHIFT,            XK_bracketleft,  spawn, {.v = (const char*[]){ "mpc", "prev", NULL } } },
+        { MODKEY,                  XK_bracketleft,  spawn, {.v = (const char*[]){ "mpc", "seek", "-5", NULL } } },
         { MODKEY,                  XK_bracketright, spawn, {.v = (const char*[]){ "mpc", "toggle", NULL } } },
 	{ MODKEY|SHIFT,            XK_bracketright, spawn, {.v = (const char*[]){ "mpc", "stop", NULL } } },
-        { MODKEY,                  XK_backslash,    spawn, {.v = (const char*[]){ "mpc", "next", NULL } } },
-        { MODKEY|SHIFT,            XK_backslash,    spawn, {.v = (const char*[]){ "mpc", "seek", "+5", NULL } } },
+        { MODKEY|SHIFT,            XK_backslash,    spawn, {.v = (const char*[]){ "mpc", "next", NULL } } },
+        { MODKEY,                  XK_backslash,    spawn, {.v = (const char*[]){ "mpc", "seek", "+5", NULL } } },
 
 
 	{ MODKEY,                       XK_b,           togglebar,                {0} },

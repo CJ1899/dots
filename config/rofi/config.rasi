@@ -1,5 +1,5 @@
 configuration{
-    modi: "run,drun,window";
+    modi: "run,drun,window,filebrowser,";
     icon-theme: "Oranchelo";
     show-icons: true;
     terminal: "st";
@@ -11,7 +11,12 @@ configuration{
     display-run: "   Run ";
     display-window: " 󱂬  Window";
     display-Network: " 󰤨  Network";
+    display-filebrowser: "   Files";
     sidebar-mode: true;
 }
+//@theme "/usr/share/rofi/themes/android_notification.rasi"
+//@theme "/home/pc/.config/rofi/themes/catppuccin-mocha.rasi"
+//@theme "/usr/share/rofi/themes/android_notification.rasi"
+//@theme "/usr/share/rofi/themes/gruvbox-dark-hard.rasi"
 
-@theme "catppuccin-mocha"
+@theme "/home/pc/.config/rofi/themes/minimal.rasi"

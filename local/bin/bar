@@ -1,0 +1,157 @@
+#!/bin/sh
+
+# init
+printf "$$" > ~/.cache/pidofbar
+sec=0
+
+# modules
+#update_cpu () {
+#	cpu="$(grep -o "^[^ ]*" /proc/loadavg )"
+#}
+
+update_cpu () { cpu="$(sb-cpu)"
+}
+
+#update_cpubars () { cpubars="$(~/scripts/statusbar/sb-cpubars)"
+#}
+
+#update_ram () {
+#	ram="$(free -h | sed -n "2s/\([^ ]* *\)\{2\}\([^ ]*\).*/\2/p")"
+#}
+
+update_ram () { ram="$(sb-memory)"
+}
+
+#update_time () {
+#	time="$(date "+  %b %d %Y %a   %I:%M:%S %p")"
+#}
+
+update_time () { time="$(sb-clock)"
+}
+
+#update_weather () {
+#	weather="$(curl -s "wttr.in/Hawler?format="%t+%h+%w+%M""| sed -E "s/^(.).*\+/\1/")"
+#}
+
+
+#update_weather () { weather="$(~/scripts/statusbar/sb-forecast)"
+#}
+
+#update_bat () {
+#	# you might need to change the path depending on your device
+#	read -r bat_status </sys/class/power_supply/BAT0/status
+#	#bat_status="$(cat /sys/class/power_supply/BAT0/status | sed 's/^\(..\).*/\1\')"
+#	read -r bat_capacity </sys/class/power_supply/BAT0/capacity
+#	#bat_capacity="$(cat /sys/class/power_supply/BAT0/capacity | sed 's/^\(..\).*/\1\')"
+#	bat="$bat_capacity% $bat_status"
+#}
+
+update_bat () { bat="$(sb-battery)"
+}
+
+
+#update_temp () {
+#
+#	#read -r temp </sys/class/thermal/thermal_zone0/temp
+#        #sed 's/^\(..\).*/\1/'
+#	temp="$(cat /sys/class/thermal/thermal_zone0/temp | sed 's/^\(..\).*/\1/')"
+#}
+
+#update_vol () {
+#	vol="$([ "$(pamixer --get-mute)" = "false" ] && printf '🔊 ' || printf '🔇 ')$(pamixer --get-volume)%"
+#}
+
+#update_vol () { vol="$(~/scripts/statusbar/sb-volume)"
+#}
+
+update_home () { home="$(sb-home)"
+}
+
+#update_root () { root="$(~/scripts/statusbar/sb-root)"
+#}
+
+#update_mnt () { mnt="$(~/scripts/statusbar/sb-mnt)"
+#}
+
+update_internet () { int="$(sb-internet)"
+}
+
+#update_nettraf () { traf="$(~/scripts/statusbar/sb-nettraf)"
+#}
+
+#update_pacpackages () { pac="$(~/scripts/statusbar/sb-pacpackages)"
+#}
+
+#update_music () { mus="$(sb-music)"
+#}
+
+#update_backlight () {
+#	# you might need to change the path depending on your device
+#	read -r actual_brightness </sys/class/backlight/intel_backlight/actual_brightness
+#	read -r max_brightness </sys/class/backlight/intel_backlight/max_brightness
+#	backlight="☀ $((actual_brightness*100/max_brightness))%"
+#}
+
+#update_kern () {
+#
+#	kern="$(uname -r)"
+#
+#}
+
+
+#mpd="$(mpc status | sed 'N;s/\n/ /;2q;d')"
+
+#update_event () {
+#	event="$(calcurse -n | sed 1d | \
+#		sed -E "s_^ *\[(.*):(.*)\] ([^\t]*)\t?.*_[\1h \2m->\3]_")"
+#	[ "[]" = "$event" ] && event=""
+#}
+# modules that don't update on their own need to be run at the start for getting their initial value
+
+#update_vol
+#update_backlight
+
+display () {
+	#printf "%s\n" " $event [$weather] [$memory $cpu] [$bat] [$backlight] [$vol] $time "
+	#xsetroot -name "$time * $ram * $home * $cpu * $bat * $backlight * $vol * $int "
+	xsetroot -name " $ram * $time * $int * $bat * $cpu *$home "
+}
+# SIGNALLING
+# trap	"<function>;display"		"RTMIN+n"
+
+#trap	"update_vol;display"		"RTMIN"
+#trap	"update_backlight;display" 	"RTMIN+1"
+
+trap	"update_bat;display" 		"RTMIN+2"
+# to update it from external commands
+## kill -m "$(cat ~/.cache/pidofbar)"
+# where m = 34 + n
+
+while true
+do
+	sleep 1 & wait && {
+		# to update item ever n seconds with a offset of m
+		## [ $((sec % n)) -eq m ] && udpate_item
+		[ $((sec % 1 )) -eq 0 ] && update_time
+		[ $((sec % 1)) -eq 0 ] && update_cpu
+#		[ $((sec % 1)) -eq 0 ] && update_cpubars
+#	        [ $((sec % 3)) -eq 0 ] && update_temp
+		[ $((sec % 1)) -eq 0 ] && update_ram
+		[ $((sec % 1)) -eq 0 ] && update_bat
+#		[ $((sec % 3600)) -eq 2 ] && update_weather
+#                [ $((sec % 1)) -eq 0 ] && update_vol
+                [ $((sec % 30)) -eq 0 ] && update_home
+#                [ $((sec % 30)) -eq 0 ] && update_root
+#                [ $((sec % 5)) -eq 0 ] && update_mnt
+                [ $((sec % 5)) -eq 0 ] && update_internet
+ #               [ $((sec % 1)) -eq 0 ] && update_nettraf
+#                [ $((sec % 1800)) -eq 0 ] && update_pacpackages
+#                [ $((sec % 1)) -eq 0 ] && update_music
+#                [ $((sec % 1)) -eq 0 ] && update_backlight
+#		[ $((sec % 3600)) -eq 0 ] && update_kern
+		#[ $((sec % 300)) -eq 1 ] && update_event
+		# how often the display updates ( 5 seconds )
+		[ $((sec % 1 )) -eq 0 ] && display
+		sec=$((sec + 1))
+	}
+done

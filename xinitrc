@@ -7,9 +7,11 @@ sudo xinput set-prop 9 311 0 &
 #feh --bg-fill ~/wallpapers --randomize &
 #feh --bg-fill ~/Pictures/C.png &
 #~/sky &
-nitrogen --restore &
+[ -f "$HOME/.fehbg" ] && sh "$HOME/.fehbg" &
+#nitrogen --restore &
+#nice xwinwrap -b -s -fs -st -sp -nf -ov -fdt -- mpv -wid WID --loop --really-quiet --framedrop=vo --no-audio --no-osc --no-input-default-bindings --panscan="1.0" ~/Videos/lily.webm &
 #/home/pc/scripts/sbar &
-~/scripts/statusbar/bar &
+bar &
 dbus-update-activation-environment --all &
 xrdb ~/.config/X11/.Xresources
 dunst &
