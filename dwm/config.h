@@ -21,7 +21,8 @@ static unsigned int baralpha        = 0xb0;
 static unsigned int borderalpha     = OPAQUE;
 
 //static const char *tags[] = { "", "", "", "", "", "", "", "", "", "", "", "", ""};
-static const char *tags[] = {
+static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "*"};
+/*static const char *tags[] = {
     "",
     "",
     "",
@@ -35,7 +36,7 @@ static const char *tags[] = {
     "",
     "",
     ""
-};
+};*/
 
 static const Rule rules[] = {
 	/* xprop(1):
@@ -51,8 +52,8 @@ static const Rule rules[] = {
 	{ "Arandr",        NULL,     NULL,            0,          1,          0,          -1,        -1 },
 	{ TERMCLASS,       NULL,     NULL,            0,          0,          1,           0,        -1 },
 	{ NULL,            NULL,     "Event Tester",  0,          0,          0,           1,        -1 }, /* xev */
-	{ NULL,            NULL,     "lf",            0,          1,          0,          -1,        -1 }, /* lf */
-	{ NULL,            NULL,     "sudo",          0,          1,          0,          -1,        -1 },
+	{ TERMCLASS,       NULL,     "lf",            0,          0,          1,           0,        -1 }, /* lf */
+//	{ NULL,            NULL,     "sudo",          0,          1,          0,          -1,        -1 },
 };
 
 static const float mfact     = 0.50; /* factor of master area size [0.05..0.95] */

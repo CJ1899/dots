@@ -1926,7 +1926,7 @@ setfocus(Client *c)
 	sendevent(c, wmatom[WMTakeFocus]);
 }
 
-void
+/*void
 setfullscreen(Client *c, int fullscreen)
 {
 	if (fullscreen && !c->isfullscreen) {
@@ -1952,6 +1952,28 @@ setfullscreen(Client *c, int fullscreen)
 		resizeclient(c, c->x, c->y, c->w, c->h);
 		arrange(c->mon);
 	}
+}*/
+
+
+void
+setfullscreen(Client *c, int fullscreen)
+{
+    if (!c) return;
+
+    if (fullscreen) {
+        XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
+                        PropModeReplace, (unsigned char *)&netatom[NetWMFullscreen], 1);
+        c->isfullscreen = 1;
+        c->bw = 0;  // Remove window border
+        resizeclient(c, selmon->mx, selmon->my, selmon->mw, selmon->mh);
+        XRaiseWindow(dpy, c->win);
+    } else {
+        XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
+                        PropModeReplace, NULL, 0);
+        c->isfullscreen = 0;
+        c->bw = borderpx; // Restore border
+        arrange(selmon); // Ensure proper tiling
+    }
 }
 
 void
@@ -2177,12 +2199,27 @@ togglebar(const Arg *arg)
 	arrange(selmon);
 }
 
-void
+/*void
 togglefullscreen()
 {
 	if (selmon->sel){
 		setfullscreen(selmon->sel, !selmon->sel->isfullscreen);
 	}
+}*/
+
+
+void
+togglefullscreen()
+{
+    if (!selmon->sel) return; // No selected client
+
+    Client *c = selmon->sel;
+
+    if (c->isfullscreen) {
+        setfullscreen(c, 0);
+    } else {
+        setfullscreen(c, 1);
+    }
 }
 
 void
