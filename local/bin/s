@@ -1,0 +1,155 @@
+#!/bin/sh
+
+# Base wallpaper directory
+BASE_WALLPAPER_DIR="$HOME/wl"
+CURRENT_FOLDER_FILE="$HOME/.config/X11/current_wallpaper_folder"
+
+# Get a list of available folders
+FOLDERS=("$BASE_WALLPAPER_DIR"/*/)
+
+# Load last used folder or default to the first one
+if [ -f "$CURRENT_FOLDER_FILE" ]; then
+    CURRENT_FOLDER=$(cat "$CURRENT_FOLDER_FILE")
+else
+    CURRENT_FOLDER="${FOLDERS[0]}"
+    echo "$CURRENT_FOLDER" > "$CURRENT_FOLDER_FILE"
+fi
+
+# Ensure CURRENT_FOLDER is valid
+if [ ! -d "$CURRENT_FOLDER" ]; then
+    CURRENT_FOLDER="${FOLDERS[0]}"
+    echo "$CURRENT_FOLDER" > "$CURRENT_FOLDER_FILE"
+fi
+
+# Get a list of wallpapers in the current folder
+shopt -s nullglob
+#WALLPAPERS=("$CURRENT_FOLDER"*.{jpg,jpeg,png,webp})
+#WALLPAPERS=($(ls -v "$CURRENT_FOLDER"*.{jpg,jpeg,png,webp}))
+WALLPAPERS=($(find "$CURRENT_FOLDER" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | sort -V))
+shopt -u nullglob
+
+# Handle empty directory case
+if [ ${#WALLPAPERS[@]} -eq 0 ]; then
+    exit 1
+fi
+
+# Load last used wallpaper from ~/.fehbg
+if [ -f "$HOME/.fehbg" ]; then
+    CURRENT_WALLPAPER=$(awk -F\" '{print $2}' "$HOME/.fehbg" 2>/dev/null)
+else
+    CURRENT_WALLPAPER="${WALLPAPERS[0]}"
+    echo "feh --bg-fill \"$CURRENT_WALLPAPER\"" > "$HOME/.fehbg"
+fi
+
+# Find the index of the current wallpaper
+CURRENT_INDEX=-1
+for i in "${!WALLPAPERS[@]}"; do
+    if [ "${WALLPAPERS[$i]}" = "$CURRENT_WALLPAPER" ]; then
+        CURRENT_INDEX=$i
+        break
+    fi
+done
+
+# Ensure valid index
+if [ $CURRENT_INDEX -eq -1 ]; then
+    CURRENT_INDEX=0
+fi
+
+# Handle forward or backward cycling based on argument
+if [ "$1" = "-b" ]; then
+    NEXT_INDEX=$(( (CURRENT_INDEX - 1 + ${#WALLPAPERS[@]}) % ${#WALLPAPERS[@]} ))
+else
+    NEXT_INDEX=$(( (CURRENT_INDEX + 1) % ${#WALLPAPERS[@]} ))
+fi
+
+if [ "$1" = "-f10" ]; then
+    NEXT_INDEX=$(( (CURRENT_INDEX + 10 + ${#WALLPAPERS[@]}) % ${#WALLPAPERS[@]} ))
+fi
+
+if [ "$1" = "-b10" ]; then
+    NEXT_INDEX=$(( (CURRENT_INDEX - 10 + ${#WALLPAPERS[@]}) % ${#WALLPAPERS[@]} ))
+fi
+
+
+# Handle random wallpaper selection
+if [ "$1" = "-r" ]; then
+    RANDOM_INDEX=$(( RANDOM % ${#WALLPAPERS[@]} ))
+    feh --bg-fill "${WALLPAPERS[$RANDOM_INDEX]}"
+    echo "feh --bg-fill \"${WALLPAPERS[$RANDOM_INDEX]}\"" > "$HOME/.fehbg"
+    exit 0
+fi
+
+# Show current wallpaper
+if [ "$1" = "-c" ]; then
+    echo "$CURRENT_WALLPAPER"
+    exit 0
+fi
+
+# Set specific wallpaper based on index
+if [ "$1" = "-s" ] && [ -n "$2" ]; then
+    INDEX=$(( $2 - 1 ))
+    if [ $INDEX -ge 0 ] && [ $INDEX -lt ${#WALLPAPERS[@]} ]; then
+        WALLPAPER_TO_SET="${WALLPAPERS[$INDEX]}"
+        feh --bg-fill "$WALLPAPER_TO_SET"
+        echo "feh --bg-fill \"$WALLPAPER_TO_SET\"" > "$HOME/.fehbg"
+    fi
+    exit 0
+fi
+
+# Switch wallpaper folders forward
+if [ "$1" = "-cf" ]; then
+    for i in "${!FOLDERS[@]}"; do
+        if [ "${FOLDERS[$i]}" = "$CURRENT_FOLDER" ]; then
+            NEXT_FOLDER_INDEX=$(( (i + 1) % ${#FOLDERS[@]} ))
+            CURRENT_FOLDER="${FOLDERS[$NEXT_FOLDER_INDEX]}"
+            echo "$CURRENT_FOLDER" > "$CURRENT_FOLDER_FILE"
+            break
+        fi
+    done
+    shopt -s nullglob
+    WALLPAPERS=("$CURRENT_FOLDER"*.{jpg,jpeg,png,webp})
+    shopt -u nullglob
+    if [ ${#WALLPAPERS[@]} -eq 0 ]; then
+        exit 1
+    fi
+    CURRENT_WALLPAPER="${WALLPAPERS[0]}"
+    feh --bg-fill "$CURRENT_WALLPAPER"
+    echo "feh --bg-fill \"$CURRENT_WALLPAPER\"" > "$HOME/.fehbg"
+    exit 0
+fi
+
+# Switch wallpaper folders backward
+if [ "$1" = "-cfb" ]; then
+    for i in "${!FOLDERS[@]}"; do
+        if [ "${FOLDERS[$i]}" = "$CURRENT_FOLDER" ]; then
+            NEXT_FOLDER_INDEX=$(( (i - 1 + ${#FOLDERS[@]}) % ${#FOLDERS[@]} ))
+            CURRENT_FOLDER="${FOLDERS[$NEXT_FOLDER_INDEX]}"
+            echo "$CURRENT_FOLDER" > "$CURRENT_FOLDER_FILE"
+            break
+        fi
+    done
+    shopt -s nullglob
+    WALLPAPERS=("$CURRENT_FOLDER"*.{jpg,jpeg,png,webp})
+    shopt -u nullglob
+    if [ ${#WALLPAPERS[@]} -eq 0 ]; then
+        exit 1
+    fi
+    CURRENT_WALLPAPER="${WALLPAPERS[0]}"
+    feh --bg-fill "$CURRENT_WALLPAPER"
+    echo "feh --bg-fill \"$CURRENT_WALLPAPER\"" > "$HOME/.fehbg"
+    exit 0
+fi
+
+# Apply all wallpapers sequentially
+if [ "$1" = "-a" ]; then
+    for WALLPAPER in "${WALLPAPERS[@]}"; do
+        feh --bg-fill "$WALLPAPER"
+        echo "feh --bg-fill \"$WALLPAPER\"" > "$HOME/.fehbg"
+        sleep 1
+    done
+    exit 0
+fi
+
+# Set the new wallpaper using feh
+feh --bg-fill "${WALLPAPERS[$NEXT_INDEX]}"
+echo "feh --bg-fill \"${WALLPAPERS[$NEXT_INDEX]}\"" > "$HOME/.fehbg"

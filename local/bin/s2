@@ -1,0 +1,189 @@
+#!/bin/sh
+
+# Directory containing wallpapers
+WALLPAPER_DIR="$HOME/wallpapers"
+#WALLPAPER_DIR="/home/pc/sollis/wl"
+
+# Get a sorted list of wallpapers (including .jpg and .png)
+WALLPAPERS=( $(ls -v "$WALLPAPER_DIR"/*.jpeg "$WALLPAPER_DIR"/*.webp "$WALLPAPER_DIR"/*.jpg "$WALLPAPER_DIR"/*.png 2>/dev/null) )
+
+# Check if ~/.fehbg exists and get the current wallpaper
+if [ -f "$HOME/.fehbg" ]; then
+    CURRENT_WALLPAPER=$(grep -oP '(?<=feh --bg-fill ).*' "$HOME/.fehbg")
+else
+    # If ~/.fehbg doesn't exist, set the first wallpaper in the list
+    CURRENT_WALLPAPER="${WALLPAPERS[0]}"
+fi
+
+# Find the index of the current wallpaper
+CURRENT_INDEX=-1
+for i in "${!WALLPAPERS[@]}"; do
+    if [ "${WALLPAPERS[$i]}" = "$CURRENT_WALLPAPER" ]; then
+        CURRENT_INDEX=$i
+        break
+    fi
+done
+
+# Handle forward or backward cycling based on argument
+if [ "$1" == "-b" ]; then
+    # Go backward (subtract 1 from current index)
+    NEXT_INDEX=$(( (CURRENT_INDEX - 1 + ${#WALLPAPERS[@]}) % ${#WALLPAPERS[@]} ))
+else
+    # Go forward (add 1 to current index)
+    NEXT_INDEX=$(( (CURRENT_INDEX + 1) % ${#WALLPAPERS[@]} ))
+fi
+
+if [ "$1" == "-r" ]; then
+    RANDOM_INDEX=$(( RANDOM % ${#WALLPAPERS[@]} ))
+    feh --bg-fill "${WALLPAPERS[$RANDOM_INDEX]}"
+    echo "feh --bg-fill ${WALLPAPERS[$RANDOM_INDEX]}" > "$HOME/.fehbg"
+    exit 0
+fi
+
+if [ "$1" == "-c" ]; then
+    echo "Current wallpaper: $CURRENT_WALLPAPER"
+    exit 0
+fi
+
+if [ "$1" == "-s" ] && [ -n "$2" ]; then
+    WALLPAPER_TO_SET="${WALLPAPERS[$2-1]}"
+    feh --bg-fill "$WALLPAPER_TO_SET"
+    echo "feh --bg-fill $WALLPAPER_TO_SET" > "$HOME/.fehbg"
+    exit 0
+fi
+
+if [ "$1" == "-a" ] && [ -n "$2" ]; then
+    INTERVAL=$2
+    while true; do
+        $HOME/.local/bin/s -r
+        sleep "$INTERVAL"
+    done
+    exit 0
+fi
+
+if [ "$1" == "-p" ] && [ -n "$2" ]; then
+    feh "${WALLPAPERS[$2-1]}"
+    exit 0
+fi
+
+#if [ "$1" == "d" ];  then
+#WALLPAPER_CHOICE=$(echo "${WALLPAPERS[@]}" | tr ' ' '\n' | dmenu -i -p "Pick a wallpaper:")
+#feh --bg-fill "$WALLPAPER_CHOICE"
+#fi
+
+
+#notify-send "Wallpaper Changed" "New wallpaper: ${WALLPAPERS[$NEXT_INDEX]}"
+
+# Apply filters (grayscale, sepia)
+if [ "$1" = "-fl" ] && [ -n "$2" ]; then
+    if ! command -v convert >/dev/null; then
+        echo "Error: ImageMagick is required for filters. Install it first." >&2
+        exit 1
+    fi
+    FILTERED_WALLPAPER="${WALLPAPERS[$NEXT_INDEX]}_filtered.jpg"
+    case "$2" in
+        grayscale)
+            convert "${WALLPAPERS[$NEXT_INDEX]}" -colorspace Gray "$FILTERED_WALLPAPER"
+            ;;
+        sepia)
+            convert "${WALLPAPERS[$NEXT_INDEX]}" -sepia-tone 80% "$FILTERED_WALLPAPER"
+            ;;
+        *)
+            echo "Invalid filter. Use 'grayscale' or 'sepia'."
+            exit 1
+            ;;
+    esac
+    feh --bg-fill "$FILTERED_WALLPAPER"
+    echo "feh --bg-fill $FILTERED_WALLPAPER" > "$HOME/.fehbg"
+#    echo "$(date): Filter $2 applied to ${WALLPAPERS[$NEXT_INDEX]}" >> "$LOG_FILE"
+    sleep 2
+    rm -f "$FILTERED_WALLPAPER"  # Remove temp file
+    exit 0
+fi
+
+LOG_FILE="$HOME/.wallpaper_log"
+echo "Wallpaper changed to: ${WALLPAPERS[$NEXT_INDEX]} at $(date)" >> "$LOG_FILE"
+
+# Function to set a video wallpaper using mpv and xwinwrap
+set_video_wallpaper() {
+    VIDEO_PATH="$1"
+    if command -v xwinwrap >/dev/null 2>&1 && command -v mpv >/dev/null 2>&1; then
+        nice xwinwrap -b -s -fs -st -sp -nf -ov -fdt -- mpv -wid WID --loop --really-quiet --framedrop=vo --no-audio --no-osc --no-input-default-bindings --panscan="1.0" "$VIDEO_PATH" &
+        echo "Video wallpaper set from: $VIDEO_PATH"
+    else
+        echo "Error: xwinwrap or mpv is not installed. Please install both to use video wallpapers."
+    fi
+}
+
+# Function to remove video wallpaper
+remove_video_wallpaper() {
+    pkill xwinwrap
+    echo "Video wallpaper removed."
+}
+
+
+# Function to display help screen
+show_help() {
+    echo "Usage: $0 [OPTION] [ARGUMENT]"
+    echo
+    echo "A script to manage wallpapers with feh."
+    echo
+    echo "Options:"
+    echo "  -h, --help              Show this help message"
+    echo "  -b                      Go to the previous wallpaper"
+    echo "  (empty)                 Go to the next wallpaper (default)"
+    echo "  -r                      Set a random wallpaper"
+    echo "  -c                      Show the current wallpaper"
+    echo "  -s [NUMBER]             Set wallpaper from the list by number"
+    echo "  -a [INTERVAL]           Set a slideshow with the given interval (in seconds)"
+    echo "  -p [NUMBER]             Preview wallpaper from the list by number"
+    echo "  -f [FILTER]             Apply filter (e.g., grayscale, sepia)"
+    echo "  $0 -vid                 /path/to/video.mp4  # Set a video wallpaper"
+    echo "  $0 -rvid                # Remove the video wallpaper"
+    echo
+    echo "Examples:"
+    echo "  $0 -b                    # Go to the previous wallpaper"
+    echo "  $0                       # Go to the next wallpaper"
+    echo "  $0 -r                    # Set a random wallpaper"
+    echo "  $0 -c                    # Show the current wallpaper"
+    echo "  $0 -s 3                  # Set the 3rd wallpaper"
+    echo "  $0 -a 10                 # Start slideshow with 10-second intervals"
+    echo "  $0 -p 5                  # Preview the 5th wallpaper"
+    echo
+    echo Made by CJ
+}
+
+
+# Handle help option
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+    show_help
+    exit 0
+fi
+
+if [ "$1" == "-l" ]; then
+    cat "$WALLPAPER_LOG"
+    exit 0
+fi
+
+if [ "$1" == "-vid" ] && [ -n "$2" ]; then
+    set_video_wallpaper "$2"
+    exit 0
+fi
+
+if [ "$1" == "-vid" ] && [ "$2" == "-a" ] && [ -n "$3" ]; then
+    set_video_wallpaper "$3"
+    exit 0
+fi
+
+if [ "$1" == "-rvid" ]; then
+    remove_video_wallpaper
+    exit 0
+fi
+
+
+
+# Set the new wallpaper using feh
+feh --bg-fill "${WALLPAPERS[$NEXT_INDEX]}"
+
+# Save the current wallpaper to ~/.fehbg for future restoration
+echo "feh --bg-fill ${WALLPAPERS[$NEXT_INDEX]}" > "$HOME/.fehbg"

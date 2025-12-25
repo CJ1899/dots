@@ -1,0 +1,108 @@
+Xft.antialias: 1
+Xft.hinting: 1
+Xft.autohint: 0
+Xft.hintstyle: hintslight
+Xft.rgba: rgb
+Xft.lcdfilter: lcddefault
+
+!!st.alpha: 0.85
+!st.alpha: 0.55
+st.alpha: 0.58
+!st.font: JetBrainsMonoNerdFont-BoldItalic:pixelsize=10
+st.font: JetBrainsMonoNerdFont-BoldItalic:pixelsize=12
+st.XcursorBlinkTimeout: 50
+
+!!*background: #1E1E2E
+!!*foreground: #CDD6F4
+
+!*background: #181818
+!*foreground: #d8d8d8
+
+! black
+!*color0: #45475A
+!*color8: #585B70
+
+! red
+!*color1: #F38BA8
+!*color9: #F38BA8
+!!*color1: #fb4934
+!!*color9: #fb4934
+
+! green
+!*color2: #A6E3A1
+!*color10: #A6E3A1
+
+! yellow
+!*color3: #F9E2AF
+!*color11: #F9E2AF
+
+! blue
+!*color4: #89B4FA
+!*color12: #89B4FA
+
+! magenta
+!*color5: #F5C2E7
+!*color13: #F5C2E7
+
+! cyan
+!*color6: #94E2D5
+!*color14: #94E2D5
+
+! white
+!!*color7: #BAC2DE
+!!*color15: #A6ADC8
+!*color7: #ffffff
+!*color15: #ffffff
+
+!! BROGRAMMER
+!*.foreground:  #d6dbe5
+!*.background:  #131313
+!*.color0:      #1f1f1f
+!*.color8:      #d6dbe5
+!*.color1:      #f81118
+!*.color9:      #de352e
+!*.color2:      #2dc55e
+!*.color10:     #1dd361
+!*.color3:      #ecba0f
+!*.color11:     #f3bd09
+!*.color4:      #2a84d2
+!*.color12:     #1081d6
+!*.color5:      #4e5ab7
+!*.color13:     #5350b9
+!*.color6:      #1081d6
+!*.color14:     #0f7ddb
+!*.color7:      #d6dbe5
+!*.color15:     #ffffff
+!*.colorBD:     #d6dbe5
+
+!! gruvbox:
+.color0: #1d2021
+*.color1: #cc241d
+*.color2: #98971a
+!!*.color2: #88813b
+*.color3: #d79921
+!*.color4: #458588
+*.color4: #d3859a
+!!*.color4: #79864e
+*.color5: #b16286
+*.color6: #689d6a
+*.color7: #a89984
+*.color8: #928374
+*.color9: #fb4934
+*.color10: #b8bb26
+*.color11: #fabd2f
+!*.color12: #83a598
+*.color12: #d3d3d3
+*.color13: #d3869b
+!*.color14: #8ec07c
+!*.color14: #458588
+*.color14: #d3859a
+*.color15: #ebdbb2
+!*.background: #282828
+!!*.background: #181818
+*.background: #030303
+*.foreground: white
+*.cursorColor: white
+
+Xcursor.theme: Windows10Dark
+Xcursor.size: 12
