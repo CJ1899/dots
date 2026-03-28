@@ -10,7 +10,7 @@
 #include <libgen.h>
 #include "wall.h"
 
-#define SAVE_PATH "/home/pc/.config/X11/wall"
+#define SAVE_PATH "/home/pc/etc/X11/wall"
 static char master_dir[1024] = "";
 static char current_folder[256] = "";
 

@@ -2,7 +2,7 @@ include config.mk
 
 CC = cc
 
-SRC = drw.c dwm.c util.c
+SRC = drw.c dwm.c util.c proc.c
 
 OBJ = ${SRC:.c=.o}
 

@@ -19,7 +19,6 @@ static const char *barlayout        = "tln|s";
 static const char *fonts[]          = { "Terminus:size=8", "NotoColorEmoji:pixelsize=12:antialias=true:autohint=true"};
 static const char dmenufont[]       = "Terminus:size=12";
 static unsigned int baralpha        = 0xb0;
-static unsigned int baralpha        = 0xb0;
 static unsigned int borderalpha     = OPAQUE;
 
 //static const char *tags[] = { "", "", "", "", "", "", "", "", "", "", "", "", ""};
@@ -115,7 +114,7 @@ static const Key keys[] = {
 	{ MODKEY,                  XK_d,      spawn, {.v = (const char*[]){"rofi", "-show", "drun", NULL } } },
         { MODKEY|SHIFT,            XK_d,      spawn, {.v = (const char*[]){"rofi", "-show", "run", NULL } } },
 	{ MODKEY,                  XK_w,      spawn, {.v = (const char*[]){ BROWSER, NULL} } },
-	{ MODKEY|SHIFT,            XK_w,      spawn, {.v = (const char*[]){ TERMINAL, "sudo", "nmtui",  NULL } } },
+	{ MODKEY|SHIFT,            XK_w,      spawn, {.v = (const char*[]){ TERMINAL, "iwctl",  NULL } } },
 	{ MODKEY|SHIFT,            XK_a,      spawn, {.v = (const char*[]){"pcmanfm", NULL } } },
 	{ MODKEY,                  XK_a,      spawn, {.v = (const char*[]){ TERMINAL, "lfrun", NULL } } },
 //	{ MODKEY,                  XK_v,      spawn, {.v = (const char*[]){"sudo","systemctl", "suspend", NULL } } },

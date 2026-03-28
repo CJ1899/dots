@@ -29,6 +29,7 @@
 
 #include "drw.h"
 #include "util.h"
+#include "proc.h"
 
 /* macros */
 #define BUTTONMASK              (ButtonPressMask|ButtonReleaseMask)
@@ -2897,7 +2898,9 @@ main(int argc, char *argv[])
 		die("pledge");
 #endif /* __OpenBSD__ */
 	scan();
+        spawn_apps();
 	run();
+        cleanup_apps();
 	cleanup();
 	XCloseDisplay(dpy);
 	return EXIT_SUCCESS;
