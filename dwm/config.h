@@ -107,6 +107,24 @@ static const Layout layouts[] = {
 
 //static char dmenumon[2] = "0";
 
+const AppConfig apps[] = {
+    /* command                                               | delay (-1 = once) */
+    { {"xrdb", "/home/pc/etc/X11/.Xresources", NULL},           -1 },
+    { {"/usr/bin/xset", "b", "off", NULL},                      -1 },
+    { {"xset", "r", "rate", "200", "50", NULL},                 -1 },
+    { {"xclip", NULL},                                           3 },
+    { {"picom", NULL},                                           5 },
+    { {"bar", NULL},                                             2 },
+    { {"dunst", NULL},                                           5 },
+    { {"unclutter", "--timeout", "5", NULL},                     3 },
+    { {"wl", NULL},                                              2 },
+//  { {"udiskie", NULL},                                         7 },
+    { {"bat-notify", NULL},                                      3 },
+    { {"dbus-update-activation-environment", "--all", NULL},    -1 },
+    { {NULL},                                                    0 }
+};
+
+
 #include <X11/XF86keysym.h>
 
 static const Key keys[] = {
@@ -145,22 +163,25 @@ static const Key keys[] = {
       /*{ 0,                       XF86XK_MonBrightnessDown,   spawn, {.v = (const char*[]){ "xbacklight", "-10", NULL } } },*/
         { MODKEY|SHIFT,            XF86XK_MonBrightnessDown,   spawn, {.v = (const char*[]){ "xbacklight", "-1", NULL } } },
         { MODKEY,                  XF86XK_MonBrightnessDown,   spawn, {.v = (const char*[]){ "xbacklight", "=", "1", NULL } } },
-    	{ 0,                       XF86XK_AudioLowerVolume,    spawn, {.v = (const char*[]){ "volume", "down", NULL } } },
+    	{ 0,                       XF86XK_AudioLowerVolume,    spawn, {.v = (const char*[]){ "volume", "-d 3", NULL } } },
       /*{ 0,                       XF86XK_AudioLowerVolume,    spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Master", "5%-", NULL } } },*/
-	{ MODKEY,                  XF86XK_AudioLowerVolume,    spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Master", "1%-", NULL } } },
-    	{ 0,                       XF86XK_AudioMute,           spawn, {.v = (const char*[]){ "volume", "mute",  NULL } } },
+//	{ MODKEY,                  XF86XK_AudioLowerVolume,    spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Master", "1%-", NULL } } },
+	{ MODKEY,                  XF86XK_AudioLowerVolume,    spawn, {.v = (const char*[]){ "volume", "-d 1", NULL } } },
+    	{ 0,                       XF86XK_AudioMute,           spawn, {.v = (const char*[]){ "volume", "-m",  NULL } } },
       /*{ 0,                       XF86XK_AudioMute,           spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Master", "toggle", NULL } } },*/
-	{ MODKEY,                  XF86XK_AudioMute,           spawn, {.v = (const char*[]){ TERMINAL, "pulsemixer", NULL } } },
-    	{ 0,                       XF86XK_AudioRaiseVolume,    spawn, {.v = (const char*[]){ "volume", "up",  NULL } } },
+	{ MODKEY,                  XF86XK_AudioMute,           spawn, {.v = (const char*[]){ TERMINAL, "alsamixer", "-c", "1", NULL } } },
+    	{ 0,                       XF86XK_AudioRaiseVolume,    spawn, {.v = (const char*[]){ "volume", "-i 3",  NULL } } },
       /*{ 0,                       XF86XK_AudioRaiseVolume,    spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Master", "5%+", NULL } } },*/
-	{ MODKEY,                  XF86XK_AudioRaiseVolume,    spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Master", "1%+", NULL } } },
-	{ 0,                       XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Capture", "toggle", NULL } } },
+      //{ MODKEY,                  XF86XK_AudioRaiseVolume,    spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Master", "1%+", NULL } } },
+	{ MODKEY,                  XF86XK_AudioRaiseVolume,    spawn, {.v = (const char*[]){ "volume", "-i 1", NULL } } },
+//	{ 0,                       XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "amixer", "-D", "pulse", "sset", "Capture", "toggle", NULL } } },
+	{ 0,                       XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "volume", "-c", NULL } } },
 	{ MODKEY,                  XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "rofi", "-show", "powermenu", "-modi", "powermenu:rofi-power-menu", NULL } } },
 /*	{ MODKEY,                  XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "sudo", "shutdown", "now", NULL } } },
 	{ MODKEY|SHIFT,            XF86XK_AudioMicMute,        spawn, {.v = (const char*[]){ "reboot", NULL } } },*/
 
 	{ 0,                       XF86XK_Tools,    spawn, {.v = (const char*[]){"lxappearance", NULL} } },
-	{ 0,                       XF86XK_Explorer, spawn, {.v = (const char*[]){"nitrogen", NULL } } },
+	{ 0,                       XF86XK_Explorer, spawn, {.v = (const char*[]){ TERMINAL, "slmount", NULL } } },
 	{ 0,                       XK_Print,        spawn, {.v = (const char*[]){ "scrot", "/home/pc/Pictures/scr/1.jpg", NULL } } },
 	{ 0,                       XF86XK_Search,   spawn, {.v = (const char*[]){ "fsearch", NULL } } },
 	{ 0,                       XF86XK_Display,  spawn, {.v = (const char*[]){ "arandr", NULL } } },
