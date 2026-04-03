@@ -19,7 +19,7 @@ void print_help(char *name) {
     printf("  -m               menu           Select via menu\n");
     printf("  -u               fnext          Folder forward\n");
     printf("  -d               fprev          Folder backward\n");
-    printf("  -v               reload         Reload list\n");
+    printf("  -R               reload         Reload list\n");
 }
 
 void run_command(char cmd) {
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
         /* Utilities */
         else if (!strcmp(argv[1], "-m") || !strcmp(argv[1], "menu"))  cmd = 'm';
         else if (!strcmp(argv[1], "-s") || !strcmp(argv[1], "save"))  cmd = 's';
-        else if (!strcmp(argv[1], "-v") || !strcmp(argv[1], "reload")) cmd = 'R';
+        else if (!strcmp(argv[1], "-R") || !strcmp(argv[1], "reload")) cmd = 'R';
 
         if (cmd) write(fd, &cmd, 1);
         close(fd);
@@ -79,12 +79,18 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         int fd = open(pipe_path, O_RDWR);
-        char cmd;
-        if (fd >= 0) {
-            while (read(fd, &cmd, 1) > 0) run_command(cmd);
-            close(fd);
+	if (fd < 0) {
+            perror("pipe open");
+            sleep(1);
+            continue;
         }
+        char cmd;
+	while (read(fd, &cmd, 1) > 0) {
+            run_command(cmd);
+        }
+        close(fd);
     }
+
     return 0;
 }
 

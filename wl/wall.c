@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <libgen.h>
+#include <signal.h>
 #include "wall.h"
 
 #define SAVE_PATH "/home/pc/etc/X11/wall"
@@ -54,7 +55,13 @@ static void scan_and_fill(void) {
             const char *ext = strrchr(namelist[n]->d_name, '.');
             if (ext && (strcasecmp(ext, ".jpg") == 0 || strcasecmp(ext, ".png") == 0 ||
                         strcasecmp(ext, ".jpeg") == 0 || strcasecmp(ext, ".webp") == 0)) {
-                files = realloc(files, sizeof(char *) * (count + 1));
+            //    files = realloc(files, sizeof(char *) * (count + 1));
+		char **tmp = realloc(files, sizeof(char *) * (count + 1));
+            if (!tmp) {
+               perror("realloc");
+               return;
+               }
+             files = tmp;
                 files[count++] = strdup(namelist[n]->d_name);
             }
         }
@@ -65,6 +72,7 @@ static void scan_and_fill(void) {
 }
 
 static void wall_init(void) {
+    signal(SIGCHLD, SIG_IGN);
     if (files) return;
 
     if (master_dir[0] == '\0') {
@@ -78,19 +86,22 @@ static void wall_init(void) {
                 rel_path[strcspn(rel_path, "\n")] = 0;
             fclose(f);
 
-            /* Extraction */
             char temp[512];
             strcpy(temp, rel_path);
-            char *fname = basename(temp);
-            char *fdir = dirname(temp);
+//            char *fname = basename(temp);
+//            char *fdir = dirname(temp);
 
+	    char temp_dir[512], temp_base[512];
+	    strcpy(temp_dir, rel_path);
+	    strcpy(temp_base, rel_path);
+
+	    char *fdir = dirname(temp_dir);
+	    char *fname = basename(temp_base);
             strncpy(current_folder, fdir, sizeof(current_folder)-1);
             current_folder[sizeof(current_folder)-1] = '\0';
 
-            /* Perform the scan */
             scan_and_fill();
 
-            /* Set index to saved file */
             for (int i = 0; i < count; i++) {
                 if (strcmp(files[i], fname) == 0) {
                     cur = i;
@@ -102,6 +113,8 @@ static void wall_init(void) {
 }
     scan_and_fill();
 }
+
+
 
 void wall_reload(const void *arg) {
     if (!files || count == 0) {
@@ -134,9 +147,14 @@ void wall_reload(const void *arg) {
     /* If the file was deleted, cur stays at 0 by default from wall_init */
 }
 
-static void run_setter(const char *filename) {
+/*static void run_setter(const char *filename) {
     char fullpath[2048];
+    snprintf(fullpath, sizeof(fullpath), "%s/%s/%s", master_dir, current_folder, filename);*/
+
+/*static void run_setter(const char *filename) {
+    char fullpath[PATH_MAX]; // Use the system's actual max path limit
     snprintf(fullpath, sizeof(fullpath), "%s/%s/%s", master_dir, current_folder, filename);
+}
 
 // Write current status to a temp file for the status bar
     FILE *f = fopen("/tmp/wall_info", "w");
@@ -149,6 +167,25 @@ static void run_setter(const char *filename) {
     if (fork() == 0) {
         execlp("hsetroot", "hsetroot", "-cover", fullpath, (char *)NULL);
         exit(1);
+    }
+}*/
+
+static void run_setter(const char *filename) {
+    char fullpath[PATH_MAX];
+    snprintf(fullpath, sizeof(fullpath), "%s/%s/%s", master_dir, current_folder, filename);
+
+    /* Write current status to a temp file for the status bar */
+    FILE *f = fopen("/tmp/wall_info", "w");
+    if (f) {
+        fprintf(f, "%s | %d/%d", current_folder, cur + 1, count);
+        fclose(f);
+    }
+
+    /* The Fork: Launch hsetroot */
+    if (fork() == 0) {
+        /* This is the child process */
+        execlp("hsetroot", "hsetroot", "-cover", fullpath, (char *)NULL);
+        _exit(1);
     }
 }
 
@@ -224,14 +261,24 @@ void wall_folder_select(const void *arg) {
 
     for (int i = 0; i < n; i++) {
         if (namelist[i]->d_type == DT_DIR && namelist[i]->d_name[0] != '.') {
-            folders = realloc(folders, sizeof(char *) * (f_count + 1));
-            folders[f_count] = strdup(namelist[i]->d_name);
-            if (strcmp(folders[f_count], current_folder) == 0) f_cur = f_count;
+            //folders = realloc(folders, sizeof(char *) * (f_count + 1));
+            //folders[f_count] = strdup(namelist[i]->d_name);
+		char **tmp = realloc(folders, sizeof(char *) * (f_count + 1));
+         if (tmp) {
+                folders = tmp;
+                folders[f_count] = strdup(namelist[i]->d_name);
+         if (strcmp(folders[f_count], current_folder) == 0) f_cur = f_count;
             f_count++;
+            }
         }
         free(namelist[i]);
     }
     free(namelist);
+
+    if (f_count == 0) {
+        if (folders) free(folders);
+        return;
+    }
 
     /* Shift logic */
     int dir = ((FakeArg *)arg)->i;
