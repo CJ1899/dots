@@ -1,6 +1,5 @@
 # Makefile for 'wl' wallpaper manager
 CC = gcc
-LIBS = -lX11 -lImlib2 -lXinerama
 CFLAGS = -O2 -Wall
 TARGET = wl
 SRC = wl.c wall.c
@@ -9,7 +8,7 @@ OBJ = $(SRC:.c=.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) $(LIBS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ)
 
 clean:
 	rm -f $(TARGET) $(OBJ)

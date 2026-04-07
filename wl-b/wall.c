@@ -185,8 +185,7 @@ static void run_setter(const char *filename) {
     if (fork() == 0) {
         /* This is the child process */
         execlp("hsetroot", "hsetroot", "-cover", fullpath, (char *)NULL);
-      _exit(1);
-	   // render_wallpaper(fullpath);
+        _exit(1);
     }
 }
 

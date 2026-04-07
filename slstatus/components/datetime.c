@@ -12,7 +12,7 @@ datetime(const char *fmt)
     char tmp[256];
 
     /* 12-hour clock icons */
-    static const char *icons[] = {
+      static const char *icons[] = {
         "🕛", "🕐", "🕑", "🕒", "🕓", "🕔",
         "🕕", "🕖", "🕗", "🕘", "🕙", "🕚"
     };

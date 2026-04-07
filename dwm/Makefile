@@ -1,6 +1,6 @@
 include config.mk
 
-CC = cc
+CC = gcc
 
 SRC = drw.c dwm.c util.c proc.c
 

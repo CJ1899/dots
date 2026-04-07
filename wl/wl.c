@@ -2,25 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <signal.h>
 #include "wall.h"
+#include "ipc.h"
 
-#define PIPE_BASE "/tmp/wl_pipe_"
+char sock_path[104];
+
 typedef struct { int i; } FakeArg;
-
-void print_help(char *name) {
-    printf("Usage: %s [option/command]\n", name);
-    printf("Options:           Commands:\n");
-    printf("  -n               next           Next wallpaper\n");
-    printf("  -p               prev           Previous wallpaper\n");
-    printf("  -r               rand           Random wallpaper\n");
-    printf("  -s               save           Save current state\n");
-    printf("  -m               menu           Select via menu\n");
-    printf("  -u               fnext          Folder forward\n");
-    printf("  -d               fprev          Folder backward\n");
-    printf("  -R               reload         Reload list\n");
-}
 
 void run_command(char cmd) {
     FakeArg fwd = { .i = 1 }, bwd = { .i = -1 };
@@ -36,34 +28,39 @@ void run_command(char cmd) {
     }
 }
 
+void cleanup(int sig) {
+    unlink(sock_path);
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
-    char pipe_path[256], *disp = getenv("DISPLAY");
-    snprintf(pipe_path, sizeof(pipe_path), "%s%s", PIPE_BASE, disp ? disp : ":0");
+    get_sock_path(sock_path, sizeof(sock_path));
+
+    struct sockaddr_un addr = { .sun_family = AF_UNIX };
+    snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", sock_path);
+    addr.sun_path[sizeof(addr.sun_path) - 1] = '\0';
 
     /* CLIENT MODE */
     if (argc > 1) {
         if (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
-            print_help(argv[0]);
-            return 0;
+            return 0; // Help text here
         }
 
-        int fd = open(pipe_path, O_WRONLY | O_NONBLOCK);
-        if (fd < 0) {
-            fprintf(stderr, "Daemon not running on %s\n", disp ? disp : ":0");
+        int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+            fprintf(stderr, "Daemon not running on %s\n", sock_path);
+            close(fd);
             return 1;
         }
 
         char cmd = 0;
-        /* Wallpaper Navigation */
-        if      (!strcmp(argv[1], "-n") || !strcmp(argv[1], "next"))  cmd = 'n';
-        else if (!strcmp(argv[1], "-p") || !strcmp(argv[1], "prev"))  cmd = 'p';
-        else if (!strcmp(argv[1], "-r") || !strcmp(argv[1], "rand"))  cmd = 'r';
-        /* Folder Navigation */
-        else if (!strcmp(argv[1], "-u") || !strcmp(argv[1], "fnext")) cmd = 'u';
-        else if (!strcmp(argv[1], "-d") || !strcmp(argv[1], "fprev")) cmd = 'd';
-        /* Utilities */
-        else if (!strcmp(argv[1], "-m") || !strcmp(argv[1], "menu"))  cmd = 'm';
-        else if (!strcmp(argv[1], "-s") || !strcmp(argv[1], "save"))  cmd = 's';
+        if      (!strcmp(argv[1], "-n") || !strcmp(argv[1], "next"))   cmd = 'n';
+        else if (!strcmp(argv[1], "-p") || !strcmp(argv[1], "prev"))   cmd = 'p';
+        else if (!strcmp(argv[1], "-r") || !strcmp(argv[1], "rand"))   cmd = 'r';
+        else if (!strcmp(argv[1], "-u") || !strcmp(argv[1], "fnext"))  cmd = 'u';
+        else if (!strcmp(argv[1], "-d") || !strcmp(argv[1], "fprev"))  cmd = 'd';
+        else if (!strcmp(argv[1], "-m") || !strcmp(argv[1], "menu"))   cmd = 'm';
+        else if (!strcmp(argv[1], "-s") || !strcmp(argv[1], "save"))   cmd = 's';
         else if (!strcmp(argv[1], "-R") || !strcmp(argv[1], "reload")) cmd = 'R';
 
         if (cmd) write(fd, &cmd, 1);
@@ -72,25 +69,30 @@ int main(int argc, char *argv[]) {
     }
 
     /* DAEMON MODE */
-    unlink(pipe_path);
-    if (mkfifo(pipe_path, 0666) == -1) return 1;
+    int serv_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    signal(SIGINT, cleanup);
+    signal(SIGTERM, cleanup);
+    umask(0077);
+    unlink(sock_path);
 
+    if (bind(serv_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        perror("bind");
+	close(serv_fd);
+        return 1;
+    }
+    listen(serv_fd, 5);
     wall_restore();
 
     while (1) {
-        int fd = open(pipe_path, O_RDWR);
-	if (fd < 0) {
-            perror("pipe open");
-            sleep(1);
-            continue;
-        }
+        int client_fd = accept(serv_fd, NULL, NULL);
+        if (client_fd < 0) continue;
+
         char cmd;
-	while (read(fd, &cmd, 1) > 0) {
+        if (read(client_fd, &cmd, 1) > 0) {
             run_command(cmd);
         }
-        close(fd);
+        close(client_fd);
     }
-
     return 0;
 }
 
