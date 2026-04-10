@@ -1,0 +1,10 @@
+#!/bin/sh
+
+current_layout=$(setxkbmap -query | grep layout | awk '{print $2}')
+current_variant=$(setxkbmap -query | grep variant | awk '{print $2}')
+
+if [ "$current_layout" == "us" ]; then
+    setxkbmap iq -variant ku_ara
+else
+    setxkbmap us
+fi

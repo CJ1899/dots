@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# Create a unique socket path
+export UB_SOCKET="/tmp/ueberzugpp-$(id -u).socket"
+
+# Kill any old instances
+rm -f "$UB_SOCKET"
+
+# Start the layer in the background
+# It creates the socket and waits for commands
+ueberzugpp layer -s "$UB_SOCKET" &
+UB_PID=$!
+
+# Give it a millisecond to breathe
+sleep 0.1
+
+# Run lf
+lf "$@"
+
+# Kill ueberzugpp when you quit lf
+kill "$UB_PID"

@@ -1,0 +1,72 @@
+configuration {
+  font: "Terminus 16";
+
+  drun {
+    display-name: "Run:";
+  }
+
+  run {
+    display-name: "run:";
+  }
+
+  window {
+    display-name: "[*.*]";
+  }
+
+  timeout {
+    delay: 10;
+    action: "kb-cancel";
+  }
+}
+
+* {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  spacing: 0;
+
+  bg: #1e1e2e;
+  bg-alt: #f0f0f0;
+  fg: #d3859a;
+  fg-alt: #f0f0f0;
+
+  background-color: @bg;
+  text-color: @fg;
+}
+
+window {
+  transparency: "real";
+}
+
+mainbox {
+  children: [inputbar, listview];
+}
+
+inputbar {
+  children: [prompt, entry];
+}
+
+entry {
+  padding: 12px 0;
+}
+
+prompt {
+  padding: 12px;
+}
+
+listview {
+  lines: 8;
+}
+
+element {
+  children: [element-text];
+}
+
+element-text {
+  padding: 12px;
+  text-color: @fg-alt;
+}
+
+element-text selected {
+  text-color: @fg;
+}
