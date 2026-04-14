@@ -7,7 +7,7 @@ OBJ = $(SRC:.c=.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) $(LIBS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ)
 
 clean:
 	rm -f $(TARGET) $(OBJ)
