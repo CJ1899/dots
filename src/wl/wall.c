@@ -9,9 +9,24 @@
 #include <time.h>
 #include <libgen.h>
 #include <signal.h>
+#include <X11/Xlib.h>
 #include "wall.h"
 
-#define SAVE_PATH "/home/pc/etc/X11/wall"
+//static Display *x_display = NULL;
+
+//void wall_set_display(Display *dpy) {
+//    x_display = dpy;
+//}
+
+static const char *get_save_path(void) {
+    static char path[PATH_MAX];
+    if (path[0]) return path;
+    const char *home = getenv("HOME");
+    snprintf(path, sizeof(path), "%s/etc/X11/wall",
+             home ? home : "/root");
+    return path;
+}
+
 static char master_dir[1024] = "";
 static char current_folder[256] = "";
 
@@ -59,6 +74,8 @@ static void scan_and_fill(void) {
 		char **tmp = realloc(files, sizeof(char *) * (count + 1));
             if (!tmp) {
                perror("realloc");
+	        while (n--) free(namelist[n]);
+		free(namelist);
                return;
                }
              files = tmp;
@@ -72,11 +89,10 @@ static void scan_and_fill(void) {
 }
 
 static void wall_init(void) {
-    signal(SIGCHLD, SIG_IGN);
     if (files) return;
 
     if (master_dir[0] == '\0') {
-        FILE *f = fopen(SAVE_PATH, "r");
+	FILE *f = fopen(get_save_path(), "r");
         char rel_path[512] = "";
 
         if (f) {
@@ -109,8 +125,8 @@ static void wall_init(void) {
                 }
             }
             return;
+	}
     }
-}
     scan_and_fill();
 }
 
@@ -158,12 +174,13 @@ static void run_setter(const char *filename) {
         fclose(f);
     }
 
-    /* The Fork: Launch hsetroot */
+//    render_wallpaper(x_display, fullpath);
+
+    // The Fork: Launch hsetroot
     if (fork() == 0) {
-        /* This is the child process */
+        // This is the child process
         execlp("hsetroot", "hsetroot", "-cover", fullpath, (char *)NULL);
       _exit(1);
-	   // render_wallpaper(fullpath);
     }
 }
 
@@ -186,7 +203,7 @@ void wall_restore(void) {
 
 void wall_save(const void *arg) {
     if (count == 0 || master_dir[0] == '\0') return;
-    FILE *f = fopen(SAVE_PATH, "w");
+    FILE *f = fopen(get_save_path(), "w");
     if (f) {
         fprintf(f, "%s\n%s/%s\n", master_dir, current_folder, files[cur]);
         fclose(f);
@@ -198,7 +215,6 @@ void wall_random(const void *arg) {
     if (count <= 1) return;
 
     /* Seed the randomizer using the current time */
-    srand(time(NULL));
     cur = rand() % count;
 
     /* Re-use your existing logic to apply the change */
@@ -228,6 +244,7 @@ void wall_select(const void *arg) {
 }
 
 void wall_folder_select(const void *arg) {
+    if (!arg) return;
     if (master_dir[0] == '\0') wall_init();
 
     struct dirent **namelist;
@@ -263,12 +280,14 @@ void wall_folder_select(const void *arg) {
     f_cur = (f_cur + dir + f_count) % f_count;
     strcpy(current_folder, folders[f_cur]);
 
-    /* Cleanup RAM for new folder */
+    /* Cleanup for new folder */
+    if (files) {
     for (int j = 0; j < count; j++) free(files[j]);
     free(files);
     files = NULL;
-    count = 0;
-    cur = 0; /* Jumps to first image in NEW folder */
+     }
+      count = 0;
+      cur = 0;
 
     /* Re-scan using current_folder in RAM */
     wall_init();

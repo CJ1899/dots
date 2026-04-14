@@ -1,6 +1,5 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
-#include <X11/extensions/Xinerama.h>
 #include <Imlib2.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,97 +16,95 @@ static void set_root_atoms(Display *display, int screen, Pixmap pixmap) {
     atom_eroot = XInternAtom(display, "ESETROOT_PMAP_ID", True);
 
     if (atom_root != None && atom_eroot != None) {
-        XGetWindowProperty(display, RootWindow(display, screen), atom_root, 0L, 1L, False, AnyPropertyType, &type, &format, &length, &after, &data_root);
+        XGetWindowProperty(display, RootWindow(display, screen),
+                           atom_root, 0L, 1L, False, AnyPropertyType,
+                           &type, &format, &length, &after, &data_root);
+
         if (type == XA_PIXMAP && data_root) {
-            XGetWindowProperty(display, RootWindow(display, screen), atom_eroot, 0L, 1L, False, AnyPropertyType, &type, &format, &length, &after, &data_eroot);
-            if (data_eroot && type == XA_PIXMAP && *((Pixmap *) data_root) == *((Pixmap *) data_eroot)) {
-                XKillClient(display, *((Pixmap *) data_root));
+            XGetWindowProperty(display, RootWindow(display, screen),
+                               atom_eroot, 0L, 1L, False, AnyPropertyType,
+                               &type, &format, &length, &after, &data_eroot);
+
+            if (data_eroot && type == XA_PIXMAP &&
+                *((Pixmap *)data_root) == *((Pixmap *)data_eroot)) {
+                XKillClient(display, *((Pixmap *)data_root));
             }
+
             if (data_eroot) XFree(data_eroot);
         }
+
         if (data_root) XFree(data_root);
     }
 
     atom_root = XInternAtom(display, "_XROOTPMAP_ID", False);
     atom_eroot = XInternAtom(display, "ESETROOT_PMAP_ID", False);
-    XChangeProperty(display, RootWindow(display, screen), atom_root, XA_PIXMAP, 32, PropModeReplace, (unsigned char *) &pixmap, 1);
-    XChangeProperty(display, RootWindow(display, screen), atom_eroot, XA_PIXMAP, 32, PropModeReplace, (unsigned char *) &pixmap, 1);
+
+    XChangeProperty(display, RootWindow(display, screen),
+                    atom_root, XA_PIXMAP, 32, PropModeReplace,
+                    (unsigned char *)&pixmap, 1);
+
+    XChangeProperty(display, RootWindow(display, screen),
+                    atom_eroot, XA_PIXMAP, 32, PropModeReplace,
+                    (unsigned char *)&pixmap, 1);
 }
 
-void render_wallpaper(const char *path) {
-    Display *display = XOpenDisplay(NULL);
-    if (!display) return;
+void render_wallpaper(Display *display, const char *path) {
+    if (!display || !path) return;
 
     int screen = DefaultScreen(display);
     Window root = RootWindow(display, screen);
+
     int width = DisplayWidth(display, screen);
     int height = DisplayHeight(display, screen);
 
-    // HSETROOT INIT SEQUENCE
     imlib_set_cache_size(0);
     imlib_context_set_display(display);
     imlib_context_set_visual(DefaultVisual(display, screen));
     imlib_context_set_colormap(DefaultColormap(display, screen));
 
     Imlib_Image buffer = imlib_load_image(path);
-    if (!buffer) {
-        XCloseDisplay(display);
-        return;
-    }
-
-    XGrabServer(display);
-    XKillClient(display, AllTemporary);
-
-    Pixmap pixmap = XCreatePixmap(display, root, width, height, DefaultDepth(display, screen));
-    imlib_context_set_drawable(pixmap);
+    if (!buffer) return;
 
     Imlib_Image rootimg = imlib_create_image(width, height);
-    imlib_context_set_image(rootimg);
 
-    // MULTI-MONITOR / XINERAMA LOOP (Extracted from hsetroot's load_image)
-    int noutputs = 0;
-    XineramaScreenInfo *outputs = XineramaQueryScreens(display, &noutputs);
+    Pixmap pixmap = XCreatePixmap(display, root, width, height,
+                                  DefaultDepth(display, screen));
+
+    imlib_context_set_image(rootimg);
+    imlib_context_set_drawable(pixmap);
 
     imlib_context_set_image(buffer);
+
     int imgW = imlib_image_get_width();
     int imgH = imlib_image_get_height();
-    imlib_context_set_image(rootimg);
 
-    for (int i = 0; i < (outputs ? noutputs : 1); i++) {
-        int ox = outputs ? outputs[i].x_org : 0;
-        int oy = outputs ? outputs[i].y_org : 0;
-        int ow = outputs ? outputs[i].width : width;
-        int oh = outputs ? outputs[i].height : height;
+    /* ---- SIMPLE CENTER CROP COVER ---- */
+    double aspect = (double)width / imgW;
+    if ((int)(imgH * aspect) < height)
+        aspect = (double)height / imgH;
 
-        imlib_context_set_cliprect(ox, oy, ow, oh);
+    int newW = (int)(imgW * aspect);
+    int newH = (int)(imgH * aspect);
 
-        // The exact hsetroot '-cover' aspect logic
-        double aspect = (double)ow / imgW;
-        if ((int)(imgH * aspect) < oh) aspect = (double)oh / imgH;
+    int x = (width - newW) / 2;
+    int y = (height - newH) / 2;
 
-        int top = (oh - (int)(imgH * aspect)) / 2;
-        int left = (ow - (int)(imgW * aspect)) / 2;
+    imlib_blend_image_onto_image(buffer,
+                                 0,
+                                 0, 0, imgW, imgH,
+                                 x, y, newW, newH);
 
-        imlib_blend_image_onto_image(buffer, 0, 0, 0, imgW, imgH, ox + left, oy + top, (int)(imgW * aspect), (int)(imgH * aspect));
-    }
-
-    // FINAL PUSH TO X11
+    /* push */
     imlib_render_image_on_drawable(0, 0);
     set_root_atoms(display, screen, pixmap);
 
-    XSetCloseDownMode(display, RetainTemporary);
     XSetWindowBackgroundPixmap(display, root, pixmap);
     XClearWindow(display, root);
 
-    // CLEANUP
-    if (outputs) XFree(outputs);
-    imlib_context_set_image(buffer); imlib_free_image();
-    imlib_context_set_image(rootimg); imlib_free_image();
+    imlib_free_image();
+    imlib_context_set_image(rootimg);
+    imlib_free_image();
 
     XFlush(display);
-    XSync(display, False);
-    XUngrabServer(display);
-    imlib_flush_loaders();
-    XCloseDisplay(display);
 }
 
