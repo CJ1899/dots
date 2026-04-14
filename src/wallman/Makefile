@@ -1,5 +1,4 @@
 CC = gcc
-LIBS = -lX11 -lImlib2 -lXinerama
 CFLAGS = -O2 -Wall
 TARGET = wallman
 SRC = wallman.c wall.c
