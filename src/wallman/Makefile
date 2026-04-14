@@ -17,4 +17,7 @@ install: all
 	cp -f $(TARGET) /usr/local/bin
 	chmod 755 /usr/local/bin/$(TARGET)
 
-.PHONY: all clean install
+uninstall:
+	rm -f /usr/local/bin/$(TARGET)
+
+.PHONY: all clean install uninstall
