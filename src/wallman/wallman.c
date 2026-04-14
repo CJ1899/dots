@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
         }
         else if (!strcmp(argv[argi], "-i")) query_mode = 1;
         else if (!strcmp(argv[argi], "-h") || !strcmp(argv[argi], "--help")) {
-            printf("Usage: wl [-S :display] [-y dur] [-j idx] [-i] <cmd>\n");
+            printf("Usage: wallman [-S :display] [-y dur] [-j idx] [-i] <cmd>\n");
             return 0;
         } else break;
         argi++;

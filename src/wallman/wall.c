@@ -12,7 +12,6 @@
 #include <sys/types.h>
 #include "wall.h"
 
-/* Exported globals */
 int count = 0;
 int cur = 0;
 char current_folder[256] = "";
@@ -212,7 +211,6 @@ void wall_folder_select(const void *arg) {
     if (!arg || master_dir[0] == '\0') return;
 
     struct dirent **namelist;
-    /* alphasort is fine here for folder names */
     int n = scandir(master_dir, &namelist, NULL, alphasort);
     if (n < 0) return;
 
@@ -252,7 +250,6 @@ void wall_folder_select(const void *arg) {
 
     if (f_count == 0) { free(folders); return; }
 
-    /* Cycle folder index */
     int dir = ((Arg *)arg)->i;
     f_cur = (f_cur + dir + f_count) % f_count;
 
