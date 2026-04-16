@@ -16,16 +16,17 @@ int count = 0;
 int cur = 0;
 char current_folder[256] = "";
 
-static char master_dir[1024] = "";
+//static char master_dir[1024] = "";
+char master_dir[1024] = "";
 static char **files = NULL;
 
-static const char *get_save_path(void) {
+const char *get_save_path(void) {
     static char path[PATH_MAX];
     if (path[0]) return path;
     const char *home = getenv("HOME");
     if (!home) return NULL;
     /* Using snprintf instead of strncpy to ensure termination */
-    if (snprintf(path, sizeof(path), "%s/etc/X11/wall", home) >= (int)sizeof(path))
+    if (snprintf(path, sizeof(path), "%s/etc/wallman", home) >= (int)sizeof(path))
         return NULL;
     return path;
 }
