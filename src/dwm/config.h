@@ -127,7 +127,7 @@ const AppConfig apps[] = {
     { {"slstatus", NULL},                                        2 },
     { {"dunst", NULL},                                           5 },
     { {"unclutter", "--timeout", "5", NULL},                     3 },
-    { {"wallman", NULL},                                              2 },
+    { {"wallman", "-D", NULL},                                              2 },
     { {"bat-notify", NULL},                                      3 },
     { {"dbus-update-activation-environment", "--all", NULL},    -1 },
     { {NULL},                                                    0 }

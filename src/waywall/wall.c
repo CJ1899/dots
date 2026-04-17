@@ -16,11 +16,10 @@ int count = 0;
 int cur = 0;
 char current_folder[256] = "";
 
-//static char master_dir[1024] = "";
-char master_dir[1024] = "";
+static char master_dir[1024] = "";
 static char **files = NULL;
 
-const char *get_save_path(void) {
+static const char *get_save_path(void) {
     static char path[PATH_MAX];
     if (path[0]) return path;
     const char *home = getenv("HOME");
@@ -187,6 +186,25 @@ void wall_random(const void *arg) {
     if (count <= 1) return;
     cur = rand() % count;
     run_setter(files[cur]);
+}
+
+void wall_select(const void *arg) {
+    wall_init();
+    if (count == 0) return;
+    char cmd[128];
+    snprintf(cmd, sizeof(cmd), "seq 1 %d | rofi -dmenu -i -p 'Wallpaper:'", count);
+    FILE *fp = popen(cmd, "r");
+    if (!fp) return;
+    char result[32];
+    if (fgets(result, sizeof(result), fp)) {
+        char *end;
+        long selection = strtol(result, &end, 10);
+        if (selection > 0 && selection <= count) {
+            cur = (int)selection - 1;
+            run_setter(files[cur]);
+        }
+    }
+    pclose(fp);
 }
 
 void wall_folder_select(const void *arg) {

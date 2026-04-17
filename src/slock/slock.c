@@ -133,7 +133,7 @@ static const char *colorname[NUMCOLS] = {
 };
 
 /* lock screen opacity */
-static const float alpha = 0.93;
+static const float alpha = 0.70;
 
 /* treat a cleared input like a wrong password (color) */
 static const int failonclear = 0;

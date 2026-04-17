@@ -18,6 +18,7 @@ static struct arg args[] = {
 //    { nets_status, "%s ", NULL,},
 //    { disk_free, "  ROOT %s ","/",  NULL },
     { get_wall_info, " %s *", NULL, 3 },
+//    { run_command, "%s *", "/usr/local/bin/wl -i 2>/dev/null", 3},
     { wifi_perc, " %s", "wlan0", 1},
     { wifi_essid, " %s *", "wlan0", 1},
     { cpu_freq,   "   %sHz ", NULL, 3},
