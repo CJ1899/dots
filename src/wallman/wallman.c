@@ -347,7 +347,8 @@ int main(int argc, char *argv[]) {
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
 
-    struct sigaction sa_chld = { .sa_handler = SIG_IGN };
+    //struct sigaction sa_chld = { .sa_handler = SIG_IGN };
+    struct sigaction sa_chld = { .sa_handler = SIG_DFL };
     sigaction(SIGCHLD, &sa_chld, NULL);
 
     umask(0077);
