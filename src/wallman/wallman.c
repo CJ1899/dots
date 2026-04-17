@@ -19,7 +19,7 @@
 #include "wall.h"
 //#include "ipc.h"
 
-char sock_path[104];
+char sock_path[sizeof(((struct sockaddr_un *)0)->sun_path)];
 static int serv_fd = -1;
 static int slideshow_interval = 0;
 static char current_mode = 'n';
@@ -28,16 +28,44 @@ extern int count, cur;
 
 static int valid_display(const char *d)
 {
-    if (!d) return 1;
+    long val;
 
-    for (; *d; d++) {
-        if (!(isdigit((unsigned char)*d) ||
-              *d == ':' ||
-              *d == '.')) {
+    if (!d || *d != ':')
+        return 0;
+
+    d++;
+
+    if (!isdigit((unsigned char)*d))
+        return 0;
+
+    val = 0;
+    while (isdigit((unsigned char)*d)) {
+        val = val * 10 + (*d - '0');
+        if (val > 65535)
             return 0;
-        }
+        d++;
     }
-    return 1;
+
+    if (*d == '\0')
+        return 1;
+
+    if (*d != '.')
+        return 0;
+
+    d++;
+
+    if (!isdigit((unsigned char)*d))
+        return 0;
+
+    val = 0;
+    while (isdigit((unsigned char)*d)) {
+        val = val * 10 + (*d - '0');
+        if (val > 255)     // reasonable X screen limit
+            return 0;
+        d++;
+    }
+
+    return *d == '\0';
 }
 
 void get_sock_path(char *dest,
@@ -161,7 +189,7 @@ static void landlock_apply(const char *master_dir, const char *save_path, const 
         char buf[PATH_MAX], *dname;
         snprintf(buf, sizeof(buf), "%s", save_path);
         dname = dirname(buf);
-        LL_ALLOW(dname, LANDLOCK_ACCESS_FS_READ_FILE  | LANDLOCK_ACCESS_FS_WRITE_FILE |
+        LL_ALLOW(dname, LANDLOCK_ACCESS_FS_READ_FILE  | LANDLOCK_ACCESS_FS_WRITE_FILE | LANDLOCK_ACCESS_FS_READ_DIR |
                         LANDLOCK_ACCESS_FS_MAKE_REG   | LANDLOCK_ACCESS_FS_REMOVE_FILE);
     }
 
