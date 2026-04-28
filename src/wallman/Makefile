@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -Wall
+CFLAGS = -O3 -Wall
 TARGET = wallman
 SRC = wallman.c wall.c
 OBJ = $(SRC:.c=.o)

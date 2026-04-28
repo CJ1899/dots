@@ -106,8 +106,10 @@ main(int argc, char *argv[])
                     res = unknown_str;
                 }
 
-                /* Update the cache and set the next runtime */
-                strncpy(args[i].cache, res, sizeof(args[i].cache) - 1);
+//                strncpy(args[i].cache, res, sizeof(args[i].cache) - 1);
+	    if (res) {
+                snprintf(args[i].cache, sizeof(args[i].cache), "%s", res);
+            }
                 args[i].cache[sizeof(args[i].cache) - 1] = '\0';
                 args[i].next_update = now + args[i].interval;
             }

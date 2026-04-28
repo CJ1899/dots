@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -O2 -Wall
-TARGET = wwl
+CFLAGS = -O3 -Wall
+TARGET = waywall
 SRC = wallman.c wall.c
 OBJ = $(SRC:.c=.o)
 

@@ -18,40 +18,18 @@
 int count = 0;
 int cur = 0;
 char current_folder[256] = "";
+
+//static char master_dir[1024] = "";
 char master_dir[1024] = "";
 static char **files = NULL;
-static int capacity = 0;
-
-static size_t path_join(char *dest, size_t max, const char *p1, const char *p2, const char *p3) {
-    size_t l1 = p1 ? strlen(p1) : 0;
-    size_t l2 = p2 ? strlen(p2) : 0;
-    size_t l3 = p3 ? strlen(p3) : 0;
-    size_t total = l1 + (p2 ? 1 : 0) + l2 + (p3 ? 1 : 0) + l3;
-
-    if (total >= max) return 0;
-
-    char *ptr = dest;
-    if (l1) { memcpy(ptr, p1, l1); ptr += l1; }
-    if (p2) { *ptr++ = '/'; memcpy(ptr, p2, l2); ptr += l2; }
-    if (p3) { *ptr++ = '/'; memcpy(ptr, p3, l3); ptr += l3; }
-    *ptr = '\0';
-
-    return total;
-}
 
 const char *get_save_path(void) {
     static char path[PATH_MAX];
     if (path[0]) return path;
     const char *home = getenv("HOME");
     if (!home) return NULL;
-
-    size_t hlen = strlen(home);
-    const char *suffix = "/etc/wallman";
-    size_t slen = strlen(suffix);
-    if (hlen + slen >= PATH_MAX) return NULL;
-
-    memcpy(path, home, hlen);
-    memcpy(path + hlen, suffix, slen + 1); /* +1 copies \0 */
+    if (snprintf(path, sizeof(path), "%s/etc/wallman", home) >= (int)sizeof(path))
+        return NULL;
     return path;
 }
 
@@ -61,7 +39,6 @@ static void free_files(void) {
     free(files);
     files = NULL;
     count = 0;
-    capacity = 0;
 }
 
 static int natural_sort(const void *a, const void *b) {
@@ -85,7 +62,8 @@ static int natural_sort(const void *a, const void *b) {
 
 static void scan_and_fill(void) {
     char scan_path[PATH_MAX];
-    if (!path_join(scan_path, sizeof(scan_path), master_dir, current_folder, NULL)) return;
+    int r = snprintf(scan_path, sizeof(scan_path), "%s/%s", master_dir, current_folder);
+    if (r < 0 || r >= (int)sizeof(scan_path)) return;
 
     struct dirent **namelist;
     int n = scandir(scan_path, &namelist, NULL, NULL);
@@ -99,18 +77,18 @@ static void scan_and_fill(void) {
 
                 struct stat st;
                 char fpath[PATH_MAX];
-                if (path_join(fpath, sizeof(fpath), scan_path, namelist[i]->d_name, NULL)) {
+                if (snprintf(fpath, sizeof(fpath), "%s/%s", scan_path, namelist[i]->d_name) < (int)sizeof(fpath)) {
                     if (stat(fpath, &st) == 0 && S_ISREG(st.st_mode)) {
+                        /* strdup first so we don't realloc if it fails */
                         char *s = strdup(namelist[i]->d_name);
                         if (s) {
-                            /* Optimization: Exponential Realloc */
-                            if (count >= capacity) {
-                                capacity = capacity ? capacity * 2 : 16;
-                                char **tmp = realloc(files, sizeof(char *) * capacity);
-                                if (!tmp) { free(s); break; }
+                            char **tmp = realloc(files, sizeof(char *) * (count + 1));
+                            if (tmp) {
                                 files = tmp;
+                                files[count++] = s;
+                            } else {
+                                free(s);
                             }
-                            files[count++] = s;
                         }
                     }
                 }
@@ -124,6 +102,7 @@ static void scan_and_fill(void) {
 
 static void wall_init(void) {
     if (files) return;
+
     const char *save = get_save_path();
     if (master_dir[0] == '\0' && save) {
         FILE *f = fopen(save, "r");
@@ -136,22 +115,18 @@ static void wall_init(void) {
             fclose(f);
 
             char d_tmp[PATH_MAX], b_tmp[PATH_MAX];
-            size_t rlen = strlen(rel_path);
-            if (rlen < PATH_MAX) {
-                memcpy(d_tmp, rel_path, rlen + 1);
-                memcpy(b_tmp, rel_path, rlen + 1);
-                char *fdir = dirname(d_tmp);
-                char *fname = basename(b_tmp);
+            snprintf(d_tmp, sizeof(d_tmp), "%s", rel_path);
+            snprintf(b_tmp, sizeof(b_tmp), "%s", rel_path);
 
-                size_t flen = strlen(fdir);
-                if (flen < sizeof(current_folder)) memcpy(current_folder, fdir, flen + 1);
+            char *fdir = dirname(d_tmp);
+            char *fname = basename(b_tmp);
+            snprintf(current_folder, sizeof(current_folder), "%s", fdir);
 
-                scan_and_fill();
-                for (int i = 0; i < count; i++) {
-                    if (strcmp(files[i], fname) == 0) { cur = i; break; }
-                }
-                return;
+            scan_and_fill();
+            for (int i = 0; i < count; i++) {
+                if (strcmp(files[i], fname) == 0) { cur = i; break; }
             }
+            return;
         }
     }
     scan_and_fill();
@@ -160,7 +135,8 @@ static void wall_init(void) {
 static void run_setter(const char *filename) {
     if (!filename) return;
     char fullpath[PATH_MAX];
-    if (!path_join(fullpath, sizeof(fullpath), master_dir, current_folder, filename)) return;
+    int r = snprintf(fullpath, sizeof(fullpath), "%s/%s/%s", master_dir, current_folder, filename);
+    if (r < 0 || r >= (int)sizeof(fullpath)) return;
 
     pid_t pid = fork();
     if (pid == 0) {
@@ -198,38 +174,76 @@ void wall_restore(void) {
     if (count > 0) run_setter(files[cur]);
 }
 
-void wall_save(const void *arg) {
+/*void wall_save(const void *arg) {
     const char *save = get_save_path();
     if (count == 0 || master_dir[0] == '\0' || !save) return;
+    FILE *f = fopen(save, "w");
+    if (f) {
+        fprintf(f, "%s\n", master_dir);
+        fprintf(f, "%s/%s\n", current_folder, files[cur]);
+        fclose(f);
+    }
+}*/
 
+void wall_save(const void *arg)
+{
+    const char *save = get_save_path();
+    FILE *f = NULL;
     char temp_path[PATH_MAX];
-    size_t slen = strlen(save);
-    if (slen + 5 >= PATH_MAX) return;
-    memcpy(temp_path, save, slen);
-    memcpy(temp_path + slen, ".tmp", 5);
 
-    FILE *f = fopen(temp_path, "w");
-    if (!f) return;
+    /* 1. Validation */
+    if (count == 0 || master_dir[0] == '\0' || !save)
+        return;
 
-    if (fprintf(f, "%s\n%s/%s\n", master_dir, current_folder, files[cur]) < 0) goto cleanup;
-    if (fflush(f) != 0) goto cleanup;
+    if (snprintf(temp_path, sizeof(temp_path), "%s.tmp", save) >= (int)sizeof(temp_path))
+        return;
+
+    /* 2. Create Temporary File */
+    f = fopen(temp_path, "w");
+    if (!f)
+        return;
+
+    /* Ordering: Write -> fflush (Stdio to OS) -> fsync (OS to Disk Layer) */
+    if (fprintf(f, "%s\n%s/%s\n", master_dir, current_folder, files[cur]) < 0)
+        goto cleanup;
+
+    if (fflush(f) != 0)
+        goto cleanup;
 
     int fd = fileno(f);
-    if (fd == -1 || fsync(fd) != 0) goto cleanup;
-    if (fclose(f) != 0) { unlink(temp_path); return; }
+    if (fd == -1 || fsync(fd) != 0)
+        goto cleanup;
+
+    if (fclose(f) != 0) {
+        unlink(temp_path);
+        return;
+    }
     f = NULL;
 
-    if (rename(temp_path, save) != 0) { unlink(temp_path); return; }
+    /* 5. Atomic Replace
+     * Replaces the old file with the new verified data. */
+    if (rename(temp_path, save) != 0) {
+        unlink(temp_path);
+        return;
+    }
 
+    /* 6. Parent Directory Sync
+     * Commits the 'rename' metadata to the filesystem journal. */
     char dirbuf[PATH_MAX];
-    memcpy(dirbuf, save, slen + 1);
-    char *dir = dirname(dirbuf);
-    int dfd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-    if (dfd >= 0) { fsync(dfd); close(dfd); }
+    if (snprintf(dirbuf, sizeof(dirbuf), "%s", save) < (int)sizeof(dirbuf)) {
+        char *dir = dirname(dirbuf);
+        int dfd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+        if (dfd >= 0) {
+            fsync(dfd);
+            close(dfd);
+        }
+    }
+
     return;
 
 cleanup:
-    if (f) fclose(f);
+    if (f)
+        fclose(f);
     unlink(temp_path);
 }
 
@@ -248,30 +262,33 @@ void wall_folder_select(const void *arg) {
     if (n < 0) return;
 
     char **folders = NULL;
-    int f_count = 0, f_cur = 0, f_cap = 0;
+    int f_count = 0, f_cur = 0;
 
     for (int i = 0; i < n; i++) {
+        /* Speed: Use d_type first. If DT_UNKNOWN, fall back to stat */
         int is_dir = (namelist[i]->d_type == DT_DIR);
+
         if (namelist[i]->d_type == DT_UNKNOWN) {
             struct stat st;
             char full[PATH_MAX];
-            if (path_join(full, sizeof(full), master_dir, namelist[i]->d_name, NULL)) {
-                if (stat(full, &st) == 0 && S_ISDIR(st.st_mode)) is_dir = 1;
+            if (snprintf(full, sizeof(full), "%s/%s", master_dir, namelist[i]->d_name) < (int)sizeof(full)) {
+                if (stat(full, &st) == 0 && S_ISDIR(st.st_mode))
+                    is_dir = 1;
             }
         }
 
         if (is_dir && namelist[i]->d_name[0] != '.') {
             char *s = strdup(namelist[i]->d_name);
             if (s) {
-                if (f_count >= f_cap) {
-                    f_cap = f_cap ? f_cap * 2 : 8;
-                    char **tmp = realloc(folders, sizeof(char *) * f_cap);
-                    if (!tmp) { free(s); break; }
+                char **tmp = realloc(folders, sizeof(char *) * (f_count + 1));
+                if (tmp) {
                     folders = tmp;
+                    folders[f_count] = s;
+                    if (strcmp(folders[f_count], current_folder) == 0) f_cur = f_count;
+                    f_count++;
+                } else {
+                    free(s);
                 }
-                folders[f_count] = s;
-                if (strcmp(folders[f_count], current_folder) == 0) f_cur = f_count;
-                f_count++;
             }
         }
         free(namelist[i]);
@@ -283,11 +300,12 @@ void wall_folder_select(const void *arg) {
     int dir = ((Arg *)arg)->i;
     f_cur = (f_cur + dir + f_count) % f_count;
 
-    size_t flen = strlen(folders[f_cur]);
-    if (flen < sizeof(current_folder)) memcpy(current_folder, folders[f_cur], flen + 1);
+    /* Update current_folder and reset image index */
+    snprintf(current_folder, sizeof(current_folder), "%s", folders[f_cur]);
 
     free_files();
-    cur = 0;
+    cur = 0; /* Reset to first image in new folder */
+
     wall_init();
     if (count > 0) run_setter(files[cur]);
 
