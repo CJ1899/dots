@@ -59,7 +59,9 @@
 			{ "Charging",    "🔌" },
 			{ "Discharging", "🔋" },
 			{ "Full",        "⚡" },
-			{ "Not charging", "🛑" },
+			{ "Not charging", "!!" },
+			//{ "Not charging", "🛑" },
+
 		};
 		size_t i;
 		char path[PATH_MAX], state[12];

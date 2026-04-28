@@ -2,10 +2,10 @@
 #define TERMCLASS "St"
 #define BROWSER "firefox"
 
-static const unsigned int borderpx  = 2;        /* border pixel of windows */
+static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
-static const unsigned int gappih    = 25;       /* horiz inner gap between windows */
-static const unsigned int gappiv    = 25;       /* vert inner gap between windows */
+static const unsigned int gappih    = 20;       /* horiz inner gap between windows */
+static const unsigned int gappiv    = 20;       /* vert inner gap between windows */
 static const unsigned int gappoh    = 20;       /* horiz outer gap between windows and screen edge */
 static const unsigned int gappov    = 20;       /* vert outer gap between windows and screen edge */
 static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
@@ -23,22 +23,10 @@ static unsigned int borderalpha     = OPAQUE;
 
 
 //static const char *tags[] = { "", "", "", "", "", "", "", "", "", "", "", "", ""};
-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "*"};
-/*static const char *tags[] = {
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
-};*/
+//static const char *tags[] = { "", "", "", "", "", "", "", "", "", "",};
+//static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "*"};
+//static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "*"};
+static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X "};
 
 static const Rule rules[] = {
 	/* xprop(1):
@@ -49,13 +37,12 @@ static const Rule rules[] = {
 	/* class           instance  title           tags mask   isfloating  isterminal  noswallow  monitor */
 /*	{ "Gimp",          NULL,     NULL,            0,          1,          0,           0,        -1 }, */
 	{ "Firefox",       NULL,     NULL,            1 << 8,     0,          0,          -1,        -1 },
-//	{ "qBittorrent",   NULL,     NULL,            1 << 11,    0,          0,          -1,        -1 },
 	{ "LibreWolf",     NULL,     NULL,            0,          0,          0,          -1,        -1 },
 	{ "Arandr",        NULL,     NULL,            0,          1,          0,          -1,        -1 },
-	{ "wallsel",       NULL,     NULL,            0,          1,          0,          -1,        -1 },
 	{ TERMCLASS,       NULL,     NULL,            0,          0,          1,           0,        -1 },
 	{ NULL,            NULL,     "Event Tester",  0,          0,          0,           1,        -1 }, /* xev */
-	{ TERMCLASS,       NULL,     "lfrun",         0,          0,          1,           0,        -1 }, /* lf */
+	{ TERMCLASS,       NULL,     "lfrun",         0,          1,          1,           0,        -1 }, /* lf */
+	{ TERMCLASS,       NULL,     "wallman-menu",  0,          1,          1,           0,        -1 }, /* lf */
 //	{ NULL,            NULL,     "sudo",          0,          1,          0,          -1,        -1 },
 };
 
@@ -68,7 +55,8 @@ static const char black[]       = "#181818"; //OG #222222
 static const char gray2[]       = "#005577"; //OG #444444
 static const char gray3[]       = "#bbbbbb";
 static const char gray4[]       = "#eeeeee";
-static const char blue[]        = "#1e1e2e"; //OG #005577 Purple #8D6298 Bl#2e3e64 C #1E1E2E #d3859a #774466 */
+//static const char blue[]        = "#1e1e2e"; //OG #005577 Purple #8D6298 Bl#2e3e64 C #1E1E2E #d3859a #774466 */
+static const char blue[]        = "#202020";
 static const char *colors[][3]      = {
 	//               fg        bg       border
 	[SchemeNorm] = { gray3,   black,    0 },
@@ -116,7 +104,7 @@ static const Layout layouts[] = {
 
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
-//static char dmenumon[2] = "0";
+static char dmenumon[2] = "0";
 
 const AppConfig apps[] = {
     /* command                                               | delay (-1 = once) */
@@ -138,15 +126,18 @@ const AppConfig apps[] = {
 
 static const Key keys[] = {
 	{ MODKEY,                  XK_Return, spawn, {.v = (const char*[]){ TERMINAL, NULL } } },
-	{ MODKEY,                  XK_d,      spawn, {.v = (const char*[]){"rofi", "-show", "drun", NULL } } },
-        { MODKEY|SHIFT,            XK_d,      spawn, {.v = (const char*[]){"rofi", "-show", "run", NULL } } },
+//	{ MODKEY,                  XK_d,      spawn, {.v = (const char*[]){"rofi", "-show", "drun", NULL } } },
+//      { MODKEY|SHIFT,            XK_d,      spawn, {.v = (const char*[]){"rofi", "-show", "run", NULL } } },
+        { MODKEY|SHIFT,            XK_d,      spawn, {.v = (const char*[]){"rofi", "-show", "drun", NULL } } },
+	{ MODKEY,                  XK_d,      spawn, {.v = (const char*[]){ "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", black, "-nf", gray3, "-sb", blue, "-sf", gray4, NULL } } },
 	{ MODKEY,                  XK_w,      spawn, {.v = (const char*[]){ BROWSER, NULL} } },
 	{ MODKEY|SHIFT,            XK_w,      spawn, {.v = (const char*[]){ TERMINAL, "iwctl",  NULL } } },
 	{ MODKEY,                  XK_a,      spawn, {.v = (const char*[]){ TERMINAL, "lfrun", NULL } } },
 	{ MODKEY|SHIFT,            XK_a,      spawn, {.v = (const char*[]){"pcmanfm", NULL } } },
-	{ MODKEY,                  XK_v,      spawn, {.v = (const char*[]){"systemctl", "suspend", NULL } } },
+//	{ MODKEY,                  XK_v,      spawn, {.v = (const char*[]){"systemctl", "suspend", NULL } } },
+	{ MODKEY,                  XK_v,      spawn, {.v = (const char*[]){"sudo", "zzz", NULL } } },
 	{ MODKEY,                  XK_z,      spawn, {.v = (const char*[]){"slock", NULL } } },
-//	{ MODKEY,                  XK_s,      spawn, {.v = (const char*[]){ "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", black, "-nf", gray3, "-sb", blue, "-sf", gray4, NULL } } },
+	{ MODKEY|CONTROL,          XK_s,      spawn, {.v = (const char*[]){ "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", black, "-nf", gray3, "-sb", blue, "-sf", gray4, NULL } } },
 	{ MODKEY|SHIFT,            XK_r,      spawn, {.v = (const char*[]){ TERMINAL, "sudo", "htop",   NULL } } },
 	{ MODKEY,		   XK_n,      spawn, {.v = (const char*[]){ TERMINAL,  "nvim", NULL } } },
 	{ MODKEY,                  XK_g,      spawn, {.v = (const char*[]){ TERMINAL, "tremc", NULL } } },
@@ -154,7 +145,7 @@ static const Key keys[] = {
 	{ MODKEY,                  XK_x,      spawn, {.v = (const char*[]){ "wallman", "prev", NULL } } },
 	{ MODKEY|SHIFT,            XK_s,      spawn, {.v = (const char*[]){ "wallman", "save", NULL } } },
 	{ MODKEY|CONTROL|SHIFT,    XK_c,      spawn, {.v = (const char*[]){ "wallman", "rand", NULL } } },
-	{ MODKEY,                  XK_s,      spawn, {.v = (const char*[]){ "wallman", "menu", NULL } } },
+	{ MODKEY,                  XK_s,      spawn, {.v = (const char*[]){  TERMINAL, "wallman-menu",    NULL } } },
 	{ MODKEY|SHIFT,            XK_c,      spawn, {.v = (const char*[]){ "wallman", "fnext", NULL } } },
 	{ MODKEY|SHIFT,            XK_x,      spawn, {.v = (const char*[]){ "wallman", "fprev", NULL } } },
 	{ MODKEY,                  XK_r,      spawn, {.v = (const char*[]){ "wallman", "reload", NULL } } },
@@ -244,8 +235,10 @@ static const Key keys[] = {
 	{ MODKEY|CONTROL,             XK_t,      setcfact,       {.f = +0.25} },
 	{ MODKEY|CONTROL,             XK_y,      setcfact,       {.f = -0.25} },
 	{ MODKEY|CONTROL,             XK_u,      setcfact,       {.f =  0.00} },
-	{ MODKEY|ALTKEY,              XK_o,      incrgaps,       {.i = +1 } },
-	{ MODKEY|ALTKEY|SHIFT,        XK_o,      incrgaps,       {.i = -1 } },
+//	{ MODKEY|ALTKEY,              XK_o,      incrgaps,       {.i = +1 } },
+//	{ MODKEY|ALTKEY|SHIFT,        XK_o,      incrgaps,       {.i = -1 } },
+	{ MODKEY,                     XK_equal,  incrgaps,       {.i = -1 } },
+	{ MODKEY,                     XK_minus,  incrgaps,       {.i = +1 } },
 	{ MODKEY|ALTKEY,              XK_i,      incrigaps,      {.i = +1 } },
 	{ MODKEY|ALTKEY|SHIFT,        XK_i,      incrigaps,      {.i = -1 } },
 	{ MODKEY|ALTKEY,              XK_p,      incrogaps,      {.i = +1 } },
@@ -275,11 +268,14 @@ static const Key keys[] = {
 	TAGKEYS(                        XK_7,                      6)
 	TAGKEYS(                        XK_8,                      7)
 	TAGKEYS(                        XK_9,                      8)
-	TAGKEYS(                        XK_0,                      9)
+/*	TAGKEYS(                        XK_0,                      9)
 	TAGKEYS(                        XK_minus,                  10)
 	TAGKEYS(                        XK_equal,                  11)
 	{ MODKEY,                       XK_BackSpace,  view,           {.ui = ~0 } },
-	{ MODKEY|SHIFT,                 XK_BackSpace,  tag,            {.ui = ~0 } },
+	{ MODKEY|SHIFT,                 XK_BackSpace,  tag,            {.ui = ~0 } },*/
+
+	{ MODKEY,                       XK_0,          view,           {.ui = ~0 } },
+	{ MODKEY|SHIFT,                 XK_0,          tag,            {.ui = ~0 } },
 
 
 	{ ALTKEY,                 XK_j,      moveresize,     {.v = "0x 25y 0w 0h"} },

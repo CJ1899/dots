@@ -137,7 +137,7 @@
  * selection.
  * https://tools.suckless.org/dmenu/patches/morecolor/
  */
-#define MORECOLOR_PATCH 1
+#define MORECOLOR_PATCH 0
 
 /* This patch adds basic mouse support for dmenu.
  * https://tools.suckless.org/dmenu/patches/mouse-support/
@@ -332,3 +332,4 @@
  * https://tools.suckless.org/dmenu/patches/xyw/
  */
 #define XYW_PATCH 1
+

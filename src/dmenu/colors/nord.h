@@ -5,5 +5,6 @@ static const char *colors[SchemeLast][2] = {
 	[SchemeSelHighlight] = { "#A3BE8C", "#000000" },
 	[SchemeNormHighlight] = { "#A3BE8C", "#000000" },
 	[SchemeOut] = { "#2E3440", "#88C0D0" },
-	[SchemeMid] = { "#D8DEE9", "#000000" },
+//	[SchemeMid] = { "#D8DEE9", "#000000" },
 };
+

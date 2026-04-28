@@ -10,21 +10,24 @@
 #include <libgen.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 #include "wall.h"
 
 int count = 0;
 int cur = 0;
 char current_folder[256] = "";
 
-static char master_dir[1024] = "";
+//static char master_dir[1024] = "";
+char master_dir[1024] = "";
 static char **files = NULL;
 
-static const char *get_save_path(void) {
+const char *get_save_path(void) {
     static char path[PATH_MAX];
     if (path[0]) return path;
     const char *home = getenv("HOME");
     if (!home) return NULL;
-    /* Using snprintf instead of strncpy to ensure termination */
     if (snprintf(path, sizeof(path), "%s/etc/wallman", home) >= (int)sizeof(path))
         return NULL;
     return path;
@@ -98,8 +101,6 @@ static void scan_and_fill(void) {
 }
 
 static void wall_init(void) {
-    static int seeded = 0;
-    if (!seeded) { srand(time(NULL)); seeded = 1; }
     if (files) return;
 
     const char *save = get_save_path();
@@ -139,8 +140,10 @@ static void run_setter(const char *filename) {
 
     pid_t pid = fork();
     if (pid == 0) {
-        execl("/usr/bin/hsetroot", "hsetroot", "-cover", fullpath, (char *)NULL);
+	execlp("awww", "awww", "img", "--transition-type", "fade", "--transition-duration", "0.1", fullpath, (char *)NULL);
         _exit(1);
+    } else if (pid > 0) {
+        waitpid(pid, NULL, 0);
     }
 }
 
@@ -171,14 +174,77 @@ void wall_restore(void) {
     if (count > 0) run_setter(files[cur]);
 }
 
-void wall_save(const void *arg) {
+/*void wall_save(const void *arg) {
     const char *save = get_save_path();
     if (count == 0 || master_dir[0] == '\0' || !save) return;
     FILE *f = fopen(save, "w");
     if (f) {
-        fprintf(f, "%s\n%s/%s\n", master_dir, current_folder, files[cur]);
+        fprintf(f, "%s\n", master_dir);
+        fprintf(f, "%s/%s\n", current_folder, files[cur]);
         fclose(f);
     }
+}*/
+
+void wall_save(const void *arg)
+{
+    const char *save = get_save_path();
+    FILE *f = NULL;
+    char temp_path[PATH_MAX];
+
+    /* 1. Validation */
+    if (count == 0 || master_dir[0] == '\0' || !save)
+        return;
+
+    if (snprintf(temp_path, sizeof(temp_path), "%s.tmp", save) >= (int)sizeof(temp_path))
+        return;
+
+    /* 2. Create Temporary File */
+    f = fopen(temp_path, "w");
+    if (!f)
+        return;
+
+    /* Ordering: Write -> fflush (Stdio to OS) -> fsync (OS to Disk Layer) */
+    if (fprintf(f, "%s\n%s/%s\n", master_dir, current_folder, files[cur]) < 0)
+        goto cleanup;
+
+    if (fflush(f) != 0)
+        goto cleanup;
+
+    int fd = fileno(f);
+    if (fd == -1 || fsync(fd) != 0)
+        goto cleanup;
+
+    if (fclose(f) != 0) {
+        unlink(temp_path);
+        return;
+    }
+    f = NULL;
+
+    /* 5. Atomic Replace
+     * Replaces the old file with the new verified data. */
+    if (rename(temp_path, save) != 0) {
+        unlink(temp_path);
+        return;
+    }
+
+    /* 6. Parent Directory Sync
+     * Commits the 'rename' metadata to the filesystem journal. */
+    char dirbuf[PATH_MAX];
+    if (snprintf(dirbuf, sizeof(dirbuf), "%s", save) < (int)sizeof(dirbuf)) {
+        char *dir = dirname(dirbuf);
+        int dfd = open(dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+        if (dfd >= 0) {
+            fsync(dfd);
+            close(dfd);
+        }
+    }
+
+    return;
+
+cleanup:
+    if (f)
+        fclose(f);
+    unlink(temp_path);
 }
 
 void wall_random(const void *arg) {
@@ -186,25 +252,6 @@ void wall_random(const void *arg) {
     if (count <= 1) return;
     cur = rand() % count;
     run_setter(files[cur]);
-}
-
-void wall_select(const void *arg) {
-    wall_init();
-    if (count == 0) return;
-    char cmd[128];
-    snprintf(cmd, sizeof(cmd), "seq 1 %d | rofi -dmenu -i -p 'Wallpaper:'", count);
-    FILE *fp = popen(cmd, "r");
-    if (!fp) return;
-    char result[32];
-    if (fgets(result, sizeof(result), fp)) {
-        char *end;
-        long selection = strtol(result, &end, 10);
-        if (selection > 0 && selection <= count) {
-            cur = (int)selection - 1;
-            run_setter(files[cur]);
-        }
-    }
-    pclose(fp);
 }
 
 void wall_folder_select(const void *arg) {
