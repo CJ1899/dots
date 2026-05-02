@@ -13,10 +13,6 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-#include <X11/extensions/Xinerama.h>
-#include <Imlib2.h>
 #include "wall.h"
 
 int count = 0;
@@ -25,12 +21,6 @@ char current_folder[256] = "";
 char master_dir[1024] = "";
 static char **files = NULL;
 static int capacity = 0;
-
-/* Internal Renderer State */
-static Display *display = NULL;
-static int screen;
-static Imlib_Image current_imlib_image = NULL;
-static Pixmap last_pixmap = None;
 
 static size_t path_join(char *dest, size_t max, const char *p1, const char *p2, const char *p3) {
     size_t l1 = p1 ? strlen(p1) : 0;
@@ -48,40 +38,6 @@ static size_t path_join(char *dest, size_t max, const char *p1, const char *p2, 
 
     return total;
 }
-
-/* Initialize X11 and Imlib once */
-void wall_setup_renderer(void) {
-    if (display) return;
-    display = XOpenDisplay(NULL);
-    if (!display) exit(1);
-    screen = DefaultScreen(display);
-
-    imlib_context_set_display(display);
-    imlib_context_set_visual(DefaultVisual(display, screen));
-    imlib_context_set_colormap(DefaultColormap(display, screen));
-    /* Set cache to 64MB */
-    imlib_set_cache_size(64 * 1024 * 1024);
-//    imlib_set_cache_size(0);
-}
-
-/* Logic to pre-load neighbors into Imlib2 cache */
-static void prefetch_neighbors(void) {
-    if (count < 2) return;
-    int neighbors[2] = { (cur - 1 + count) % count, (cur + 1) % count };
-
-    for (int i = 0; i < 2; i++) {
-        char path[PATH_MAX];
-        if (path_join(path, sizeof(path), master_dir, current_folder, files[neighbors[i]])) {
-            Imlib_Image img = imlib_load_image(path);
-            if (img) {
-                imlib_context_set_image(img);
-                imlib_free_image(); // Remains in Imlib2's 32MB cache
-            }
-        }
-    }
-}
-
-
 
 const char *get_save_path(void) {
     static char path[PATH_MAX];
@@ -217,104 +173,17 @@ static void wall_init(void) {
 }
 
 static void run_setter(const char *filename) {
-    if (!display) {
-        fprintf(stderr, "Error: X11 Display not initialized\n");
-        return;
-    }
-
+    if (!filename) return;
     char fullpath[PATH_MAX];
-    if (!path_join(fullpath, sizeof(fullpath), master_dir, current_folder, filename))
-        return;
+    if (!path_join(fullpath, sizeof(fullpath), master_dir, current_folder, filename)) return;
 
-    Imlib_Image buffer = imlib_load_image(fullpath);
-    if (!buffer) {
-        fprintf(stderr, "Error: Imlib2 failed to load %s\n", fullpath);
-        return;
+    pid_t pid = fork();
+    if (pid == 0) {
+        execl("/usr/bin/hsetroot", "hsetroot", "-cover", fullpath, (char *)NULL);
+        _exit(1);
+    } else if (pid > 0) {
+        waitpid(pid, NULL, 0);
     }
-
-    /* Get Image and Screen dimensions */
-    imlib_context_set_image(buffer);
-    int imgW = imlib_image_get_width();
-    int imgH = imlib_image_get_height();
-    int sw   = DisplayWidth(display, screen);
-    int sh   = DisplayHeight(display, screen);
-    Window root = RootWindow(display, screen);
-
-    /* Create the canvas for the root window */
-    Imlib_Image rootimg = imlib_create_image(sw, sh);
-    if (!rootimg) {
-        imlib_context_set_image(buffer);
-        imlib_free_image_and_decache();
-        return;
-    }
-
-    imlib_context_set_image(rootimg);
-    imlib_context_set_color(0, 0, 0, 255);
-    imlib_image_fill_rectangle(0, 0, sw, sh);
-    imlib_context_set_dither(1);
-    imlib_context_set_blend(1);
-
-    /* Handle Multi-Monitor via Xinerama */
-    int noutputs;
-    XineramaScreenInfo *outputs = XineramaQueryScreens(display, &noutputs);
-    XineramaScreenInfo fake = { .x_org = 0, .y_org = 0, .width = sw, .height = sh };
-    if (!outputs) { outputs = &fake; noutputs = 1; }
-
-    for (int i = 0; i < noutputs; i++) {
-        double aspect = (double)outputs[i].width / imgW;
-        if ((int)(imgH * aspect) < outputs[i].height)
-            aspect = (double)outputs[i].height / imgH;
-
-        int scaledW = (int)(imgW * aspect);
-        int scaledH = (int)(imgH * aspect);
-        int left = (outputs[i].width  - scaledW) / 2;
-        int top  = (outputs[i].height - scaledH) / 2;
-
-        imlib_context_set_image(rootimg);
-        imlib_blend_image_onto_image(buffer, 0, 0, 0, imgW, imgH,
-                                     outputs[i].x_org + left,
-                                     outputs[i].y_org + top,
-                                     scaledW, scaledH);
-    }
-
-    /* Create the X11 Pixmap */
-    Pixmap new_pixmap = XCreatePixmap(display, root, sw, sh, DefaultDepth(display, screen));
-    imlib_context_set_image(rootimg);
-    imlib_context_set_drawable(new_pixmap);
-    imlib_render_image_on_drawable(0, 0);
-
-    XGrabServer(display);
-
-    /* Set the background */
-    XSetWindowBackgroundPixmap(display, root, new_pixmap);
-    XClearWindow(display, root);
-
-    /* Set properties so compositors/terminals see the background */
-    Atom a_root  = XInternAtom(display, "_XROOTPMAP_ID",    False);
-    Atom a_eroot = XInternAtom(display, "ESETROOT_PMAP_ID", False);
-    XChangeProperty(display, root, a_root,  XA_PIXMAP, 32, PropModeReplace,
-                    (unsigned char *)&new_pixmap, 1);
-    XChangeProperty(display, root, a_eroot, XA_PIXMAP, 32, PropModeReplace,
-                    (unsigned char *)&new_pixmap, 1);
-
-    if (last_pixmap != None) {
-        XFreePixmap(display, last_pixmap);
-    }
-    last_pixmap = new_pixmap;
-
-    //XSetCloseDownMode(display, RetainTemporary);
-
-    XUngrabServer(display);
-    XFlush(display);
-
-    /* Cleanup Imlib2 Memory (Client-side) */
-    imlib_context_set_image(rootimg);
-    imlib_free_image_and_decache();
-    imlib_context_set_image(buffer);
-    imlib_free_image_and_decache();
-
-    if (outputs != &fake)
-        XFree(outputs);
 }
 
 void wall_reload(const void *arg) {

@@ -146,7 +146,8 @@ static inline int landlock_restrict_self(int rfd, uint32_t flags) {
 } while (0)
 
 static void landlock_apply(const char *master_dir,
-                           const char *save_path) {
+                           const char *save_path,
+                           const char *hsetroot_path) {
     int abi = landlock_create_ruleset(NULL, 0, LANDLOCK_CREATE_RULESET_VERSION);
     if (abi < 0) {
         if (errno == ENOSYS)
@@ -171,6 +172,7 @@ static void landlock_apply(const char *master_dir,
 
     /* Execution & dynamic linker */
     uint64_t exec_bits = LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_EXECUTE;
+    LL_ALLOW(hsetroot_path,                exec_bits);
     LL_ALLOW("/lib64/ld-linux-x86-64.so.2",exec_bits);
     LL_ALLOW("/usr/bin/sh",                exec_bits);
     LL_ALLOW("/etc/ld.so.cache",           LANDLOCK_ACCESS_FS_READ_FILE);
@@ -182,12 +184,10 @@ static void landlock_apply(const char *master_dir,
     LL_ALLOW("/lib",     lib_bits);
     LL_ALLOW("/usr/lib", lib_bits);
     LL_ALLOW("/lib64",   lib_bits);
-    LL_ALLOW("/usr/lib/x86_64-linux-gnu/imlib2", lib_bits);
 
     /* X11 & auth */
     LL_ALLOW("/tmp/.X11-unix",
              LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_WRITE_FILE);
-    LL_ALLOW("/usr/share/X11", LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR);
     const char *xauth = getenv("XAUTHORITY");
     if (xauth) LL_ALLOW(xauth, LANDLOCK_ACCESS_FS_READ_FILE);
 
@@ -195,7 +195,7 @@ static void landlock_apply(const char *master_dir,
     LL_ALLOW(master_dir,
              LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR);
 
-    /* Socket directory */
+    /* Socket directory — safe memcpy before dirname */
     char s_buf[PATH_MAX];
     size_t slen = strlen(sock_path);
     if (slen < PATH_MAX) {
@@ -208,7 +208,7 @@ static void landlock_apply(const char *master_dir,
         fprintf(stderr, "landlock: sock_path too long, skipping socket dir rule\n");
     }
 
-    /* Save-file directory */
+    /* Save-file directory — safe memcpy before dirname */
     if (save_path) {
         char sv_buf[PATH_MAX];
         size_t svlen = strlen(save_path);
@@ -250,7 +250,7 @@ typedef struct {
 static volatile sig_atomic_t running = 1;
 void handle_sig(int sig) { running = 0; }
 
-/* ── Commands ---------─────────────────────────────────────────────────── */
+/* ── Command dispatch ─────────────────────────────────────────────────── */
 
 void run_command(char cmd, int target) {
     Arg fwd = { .i =  1 };
@@ -304,8 +304,8 @@ int main(int argc, char *argv[]) {
         else if (!strcmp(argv[argi], "-D")) start_daemon = 1;
         else if (!strcmp(argv[argi], "-h") || !strcmp(argv[argi], "--help")) {
             (void)write(STDOUT_FILENO,
-                "Usage: wallman [-S :display] [-y dur] [-j idx] [-i] <cmd>\n"
-                "       wallman -D | daemon    (start background daemon)\n"
+                "Usage: wl [-S :display] [-y dur] [-j idx] [-i] <cmd>\n"
+                "       wl -D | daemon    (start background daemon)\n"
                 "Commands: next prev rand save reload fnext fprev\n", 120);
             return 0;
         } else break;
@@ -316,8 +316,8 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1) {
         (void)write(STDOUT_FILENO,
-            "Usage: wallman [-S :display] [-y dur] [-j idx] [-i] <cmd>\n"
-            "       wallman -D | daemon    (start background daemon)\n"
+            "Usage: wl [-S :display] [-y dur] [-j idx] [-i] <cmd>\n"
+            "       wl -D | daemon    (start background daemon)\n"
             "Commands: next prev rand save reload fnext fprev\n", 120);
         return 0;
     }
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
 
     get_sock_path(sock_path, sizeof(sock_path), display);
 
-    /* Build sockaddr */
+    /* Build sockaddr — memcpy is safe: get_sock_path already verified length */
     struct sockaddr_un addr = { .sun_family = AF_UNIX };
     size_t slen = strlen(sock_path);
     if (slen >= sizeof(addr.sun_path)) return 1;
@@ -378,7 +378,7 @@ int main(int argc, char *argv[]) {
     /* ── Daemon mode ───────────────────────────────────────────────────── */
     if (!start_daemon) return 0;
 
-    /* Bail out if a daemon is already running on this display */
+    /* Bail if a daemon is already running on this display */
     int test_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (test_fd >= 0) {
         if (connect(test_fd, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
@@ -409,11 +409,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    wall_setup_renderer();
     wall_restore();
 
 #ifdef __linux__
-    landlock_apply(master_dir, get_save_path() );
+    landlock_apply(master_dir, get_save_path(), "/usr/bin/hsetroot");
 #endif
 
     /* ── Event loop ────────────────────────────────────────────────────── */
@@ -446,7 +445,7 @@ int main(int argc, char *argv[]) {
         WallMsg m = {0};
         if (recv(client_fd, &m, sizeof(WallMsg), MSG_WAITALL) == sizeof(WallMsg)) {
             if (m.cmd == 'i') {
-                /* Build query response with memcpy + fast_utoa */
+                /* Build query response with memcpy + fast_utoa (no snprintf) */
                 char resp[512];
                 char cur_str[12], tot_str[12];
                 int  clen = fast_utoa(cur + 1, cur_str);
