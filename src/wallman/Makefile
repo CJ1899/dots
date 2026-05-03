@@ -1,6 +1,6 @@
 CC = gcc
 # Added -D_GNU_SOURCE to ensure all system features are available
-CFLAGS = -march=native -flto -O3 -Wall $(shell pkg-config --cflags imlib2 x11 xinerama)
+CFLAGS = -fPIE -pie -Wl,-z,relro,-z,now -fstack-protector-strong -march=native -flto -O3 -Wall $(shell pkg-config --cflags imlib2 x11 xinerama)
 LIBS = $(shell pkg-config --libs imlib2 x11 xinerama) -lXext
 
 TARGET = wallman

@@ -232,7 +232,7 @@ static void run_setter(const char *filename) {
         return;
     }
 
-    /* Get Image and Screen dimensions */
+    // Get Image and Screen dimensions
     imlib_context_set_image(buffer);
     int imgW = imlib_image_get_width();
     int imgH = imlib_image_get_height();
@@ -240,7 +240,7 @@ static void run_setter(const char *filename) {
     int sh   = DisplayHeight(display, screen);
     Window root = RootWindow(display, screen);
 
-    /* Create the canvas for the root window */
+    // Create the canvas for the root window
     Imlib_Image rootimg = imlib_create_image(sw, sh);
     if (!rootimg) {
         imlib_context_set_image(buffer);
@@ -254,7 +254,7 @@ static void run_setter(const char *filename) {
     imlib_context_set_dither(1);
     imlib_context_set_blend(1);
 
-    /* Handle Multi-Monitor via Xinerama */
+    // Handle Multi-Monitor via Xinerama
     int noutputs;
     XineramaScreenInfo *outputs = XineramaQueryScreens(display, &noutputs);
     XineramaScreenInfo fake = { .x_org = 0, .y_org = 0, .width = sw, .height = sh };
@@ -277,7 +277,7 @@ static void run_setter(const char *filename) {
                                      scaledW, scaledH);
     }
 
-    /* Create the X11 Pixmap */
+    // Create the X11 Pixmap
     Pixmap new_pixmap = XCreatePixmap(display, root, sw, sh, DefaultDepth(display, screen));
     imlib_context_set_image(rootimg);
     imlib_context_set_drawable(new_pixmap);
@@ -285,11 +285,11 @@ static void run_setter(const char *filename) {
 
     XGrabServer(display);
 
-    /* Set the background */
+    // Set the background
     XSetWindowBackgroundPixmap(display, root, new_pixmap);
     XClearWindow(display, root);
 
-    /* Set properties so compositors/terminals see the background */
+    // Set properties so compositors/terminals see the background
     Atom a_root  = XInternAtom(display, "_XROOTPMAP_ID",    False);
     Atom a_eroot = XInternAtom(display, "ESETROOT_PMAP_ID", False);
     XChangeProperty(display, root, a_root,  XA_PIXMAP, 32, PropModeReplace,
@@ -307,7 +307,7 @@ static void run_setter(const char *filename) {
     XUngrabServer(display);
     XFlush(display);
 
-    /* Cleanup Imlib2 Memory (Client-side) */
+    // Cleanup Imlib2 Memory (Client-side)
     imlib_context_set_image(rootimg);
     imlib_free_image_and_decache();
     imlib_context_set_image(buffer);
