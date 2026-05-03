@@ -41,7 +41,7 @@ static const Rule rules[] = {
 	{ "Arandr",        NULL,     NULL,            0,          1,          0,          -1,        -1 },
 	{ TERMCLASS,       NULL,     NULL,            0,          0,          1,           0,        -1 },
 	{ NULL,            NULL,     "Event Tester",  0,          0,          0,           1,        -1 }, /* xev */
-	{ TERMCLASS,       NULL,     "lfrun",         0,          1,          1,           0,        -1 }, /* lf */
+	{ TERMCLASS,       NULL,     "lfrun",         0,          0,          1,           0,        -1 }, /* lf */
 	{ TERMCLASS,       NULL,     "wallman-menu",  0,          1,          1,           0,        -1 }, /* lf */
 //	{ NULL,            NULL,     "sudo",          0,          1,          0,          -1,        -1 },
 };
@@ -57,11 +57,11 @@ static const char gray3[]       = "#bbbbbb";
 static const char gray4[]       = "#eeeeee";
 //static const char blue[]        = "#1e1e2e"; //OG #005577 Purple #8D6298 Bl#2e3e64 C #1E1E2E #d3859a #774466 */
 static const char blue[]        = "#202020";
-static const char bor[]         = "#005577";
+//static const char bor[]         = "#005577";
 static const char *colors[][3]      = {
 	//               fg        bg        border
 	[SchemeNorm] = { gray3,   black,        0 },
-	[SchemeSel]  = { gray4,   blue,     bor   },
+	[SchemeSel]  = { gray4,   blue,     blue   },
 	[SchemeHid]  = { blue,    black,    gray4 },
 };
 
