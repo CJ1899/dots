@@ -50,7 +50,7 @@ static const int nmaster     = 1;    /* number of clients in master area */
 static const int resizehints = 0;    /* 1 means respect size hints in tiled resizals */
 static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen window */
 
-/*static const char black[]       = "#181818"; //OG #222222
+static const char black[]       = "#181818"; //OG #222222
 static const char gray2[]       = "#005577"; //OG #444444
 static const char gray3[]       = "#bbbbbb";
 static const char gray4[]       = "#eeeeee";
@@ -62,20 +62,20 @@ static const char *colors[][3]      = {
 	[SchemeNorm] = { gray3,   black,        0 },
 	[SchemeSel]  = { gray4,   blue,     blue   },
 	[SchemeHid]  = { blue,    black,    gray4 },
-};*/
+};
 
-static const char black[]       = "#191724";
+/*static const char black[]       = "#191724";
 static const char gray2[]       = "#1f1d2e";
 static const char gray3[]       = "#e0def4";
 static const char gray4[]       = "#ebbcba";
 static const char blue[]        = "#31748f";
 
 static const char *colors[][3]      = {
-    /*               fg         bg         border   */
+    //               fg         bg         border
     [SchemeNorm] = { gray3,     black,     0        },
     [SchemeSel]  = { black,     blue,      blue     },
     [SchemeHid]  = { blue,      black,     gray4    },
-};
+};*/
 
 static const unsigned int stairpx   = 70;       /* depth of the stairs layout */
 static const int stairdirection     = 1;        /* 0: left-aligned, 1: right-aligned */
