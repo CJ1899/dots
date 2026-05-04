@@ -33,7 +33,7 @@ datetime(const char *fmt)
     char *pos = strstr(tmp, "CHR");
     if (pos) {
         size_t len_before = pos - tmp;
-        snprintf(buf, sizeof(buf), "%.*s%s%s",
+        snprintf(buf, sizeof(buf), "^c#ffffff^%.*s%s%s^d^",
                  (int)len_before, tmp, icon, pos + 3);
     } else {
         strncpy(buf, tmp, sizeof(buf));

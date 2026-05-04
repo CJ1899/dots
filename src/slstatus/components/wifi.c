@@ -40,7 +40,9 @@ wifi_perc(const char *interface)
     /* 2. If interface is UP, parse /proc/net/wireless */
     if (strncmp(status, "up", 2) == 0) {
         if (!(fp = fopen("/proc/net/wireless", "r")))
-            return "📶 ?%";
+//            return "📶 ?%";
+//            return "  ?%";
+	    return "^c#88D0C0^  ^c#FFFFFF^?%";
 
         cur = 0;
         while (fgets(line, sizeof(line), fp)) {
@@ -58,7 +60,10 @@ wifi_perc(const char *interface)
         int percent = (int)((float)cur / 70.0f * 100.0f);
         if (percent > 100) percent = 100;
 
-        return bprintf("📶 %d%%", percent);
+//        return bprintf("📶 %d%%", percent);
+//        return bprintf("  %d%%", percent);
+	return bprintf("^c#88D0C0^  ^c#FFFFFF^%d%%", percent);
+
     }
 
     /* 3. If interface is DOWN, check flags for 0x1003 (Enabled/Scanning) */

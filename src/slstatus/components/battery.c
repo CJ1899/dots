@@ -56,11 +56,16 @@
 			char *state;
 			char *symbol;
 		} map[] = {
-			{ "Charging",    "🔌" },
-			{ "Discharging", "🔋" },
-			{ "Full",        "⚡" },
-			{ "Not charging", "!!" },
+//			{ "Charging",    "🔌" },
+//			{ "Discharging", "🔋" },
+//			{ "Full",        "⚡" },
+//			{ "Not charging", " " },
 			//{ "Not charging", "🛑" },
+
+	    { "Charging",     "^c#A3BE8C^^d^" },
+            { "Discharging",  "^c#EBCB8B^^d^" },
+            { "Full",         "^c#88C0D0^^d^" },
+            { "Not charging", "^c#BF616A^ ^d^" },
 
 		};
 		size_t i;
@@ -75,7 +80,8 @@
 			if (!strcmp(map[i].state, state))
 				break;
 
-		return (i == LEN(map)) ? "?" : map[i].symbol;
+//		return (i == LEN(map)) ? "?" : map[i].symbol;
+		return (i == LEN(map)) ? "^c#BF616A^?^d^" : map[i].symbol;
 	}
 
 	const char *

@@ -14,8 +14,9 @@ static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
 static const int vertpad            = 5;        /* vertical padding of bar */
 static const int sidepad            = 7;        /* horizontal padding of bar */
+static const char *barlayout        = "tln|s";
 //static const char *fonts[]          = { "JetBrainsMono:size=7", "NotoColorEmoji:pixelsize=12:antialias=true:autohint=true"};
-static const char *fonts[]          = { "Terminus:size=8", "NotoColorEmoji:pixelsize=11:antialias=true:autohint=true", "Font Awesome 6 Free Solid:size=9"};
+static const char *fonts[]          = { "Terminus:size=8", "NotoColorEmoji:pixelsize=12:antialias=true:autohint=true"};
 static const char dmenufont[]       = "Terminus:size=12";
 static unsigned int baralpha        = 0xb0;
 static unsigned int borderalpha     = OPAQUE;

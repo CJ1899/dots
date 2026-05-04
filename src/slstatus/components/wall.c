@@ -7,24 +7,40 @@ const char *
 get_wall_info(void)
 {
     static char buf[256];
+    char raw[128];
     FILE *fp;
+    char *folder, *index;
 
-    /* * We force the env here because slstatus runs in a clean environment.
-     * We use $(id -u) so it works regardless of who is logged in.
-     */
-    if (!(fp = popen("XDG_RUNTIME_DIR=/run/user/$(id -u) DISPLAY=:0 wallman -i 2>/dev/null", "r"))) {
-        return "---";
-    }
+    memset(buf, 0, sizeof(buf));
+    memset(raw, 0, sizeof(raw));
 
-    if (fgets(buf, sizeof(buf), fp) == NULL) {
+    fp = popen("XDG_RUNTIME_DIR=/run/user/$(id -u) wallman -i 2>/dev/null", "r");
+
+    if (!fp) return "^c#4C566A^---^d^";
+
+    if (fgets(raw, sizeof(raw), fp) == NULL) {
         pclose(fp);
-        return "---";
+        /*
+         * If it returns --- now, wallman is failing to connect to the socket.
+         */
+        return "^c#4C566A^---^d^";
     }
     pclose(fp);
 
-    /* Clean up the newline */
-    buf[strcspn(buf, "\n")] = '\0';
+    raw[strcspn(raw, "\n")] = '\0';
 
+    folder = raw;
+    index = strstr(raw, " | ");
+
+    if (index) {
+        *index = '\0';
+        index += 3;
+        snprintf(buf, sizeof(buf), "^c#88C0D0^🖼 %s ^c#CCCCCC^[%s]^d^", folder, index);
+    } else if (strlen(raw) > 0) {
+        snprintf(buf, sizeof(buf), "^c#88C0D0^🖼 ^c#FFFFFF^%s^d^", raw);
+    } else {
+        return "^c#4C566A^---^d^";
+    }
 
     return buf;
 }
