@@ -379,7 +379,7 @@ typedef struct {
 /* ── Signal handling ──────────────────────────────────────────────────── */
 
 static volatile sig_atomic_t running = 1;
-void handle_sig(int sig) { running = 0; }
+void handle_sig(int sig) { (void)sig; running = 0; }
 
 /* ── Commands ---------─────────────────────────────────────────────────── */
 

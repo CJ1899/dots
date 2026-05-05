@@ -29,7 +29,7 @@ static int capacity = 0;
 /* Internal Renderer State */
 static Display *display = NULL;
 static int screen;
-static Imlib_Image current_imlib_image = NULL;
+//static Imlib_Image current_imlib_image = NULL;
 static Pixmap last_pixmap = None;
 
 static size_t path_join(char *dest, size_t max, const char *p1, const char *p2, const char *p3) {
@@ -64,8 +64,7 @@ void wall_setup_renderer(void) {
 //    imlib_set_cache_size(0);
 }
 
-/* Logic to pre-load neighbors into Imlib2 cache */
-static void prefetch_neighbors(void) {
+/*static void prefetch_neighbors(void) {
     if (count < 2) return;
     int neighbors[2] = { (cur - 1 + count) % count, (cur + 1) % count };
 
@@ -79,7 +78,7 @@ static void prefetch_neighbors(void) {
             }
         }
     }
-}
+}*/
 
 
 
@@ -318,6 +317,8 @@ static void run_setter(const char *filename) {
 }
 
 void wall_reload(const void *arg) {
+    (void)arg;
+
     char *current_name = (files && count > 0) ? strdup(files[cur]) : NULL;
     free_files();
     wall_init();
@@ -345,6 +346,8 @@ void wall_restore(void) {
 }
 
 void wall_save(const void *arg) {
+    (void)arg;
+
     const char *save = get_save_path();
     if (count == 0 || master_dir[0] == '\0' || !save) return;
 
@@ -380,6 +383,8 @@ cleanup:
 }
 
 void wall_random(const void *arg) {
+    (void)arg;
+
     wall_init();
     if (count <= 1) return;
     cur = rand() % count;

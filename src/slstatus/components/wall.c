@@ -20,9 +20,6 @@ get_wall_info(void)
 
     if (fgets(raw, sizeof(raw), fp) == NULL) {
         pclose(fp);
-        /*
-         * If it returns --- now, wallman is failing to connect to the socket.
-         */
         return "^c#4C566A^---^d^";
     }
     pclose(fp);

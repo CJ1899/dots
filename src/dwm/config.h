@@ -15,7 +15,7 @@ static const int topbar             = 1;        /* 0 means bottom bar */
 static const int vertpad            = 5;        /* vertical padding of bar */
 static const int sidepad            = 7;        /* horizontal padding of bar */
 //static const char *fonts[]          = { "JetBrainsMono:size=7", "NotoColorEmoji:pixelsize=12:antialias=true:autohint=true"};
-static const char *fonts[]          = { "Terminus:size=8", "NotoColorEmoji:pixelsize=11:antialias=true:autohint=true", "Font Awesome 6 Free Solid:size=9"};
+static const char *fonts[]          = { "Terminus:size=8", "unifont:size=8:antialias=false", "NotoColorEmoji:pixelsize=11:antialias=true:autohint=true", "Font Awesome 6 Free Solid:size=9"};
 static const char dmenufont[]       = "Terminus:size=12";
 static unsigned int baralpha        = 0xb0;
 static unsigned int borderalpha     = OPAQUE;
@@ -26,6 +26,8 @@ static unsigned int borderalpha     = OPAQUE;
 //static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "*"};
 //static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "*"};
 static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X "};
+//static const char *tags[] = { "일", "이", "삼", "사", "오", "육", "칠", "팔", "구" };
+//static const char *tags[] = { "一", "二", "三", "四", "五", "六", "七", "八", "九" };
 
 static const Rule rules[] = {
 	/* xprop(1):
