@@ -126,14 +126,15 @@ static const char *group = "pc";
 
 static const char *colorname[NUMCOLS] = {
 	[INIT] =   "#000000",   /* after initialization */
-	[INPUT] =  "#000005",   /* during input */
-//	[INPUT] =  "#282c34",   /* during input */
+//	[INPUT] =  "#000005",   /* during input */
+	[INPUT] =  "#101010",   /* during input */
 	[FAILED] = "#050000",   /* wrong password */
 //	[FAILED] = "#be5046",   /* wrong password */
 };
 
 /* lock screen opacity */
-static const float alpha = 0.70;
+//static const float alpha = 0.70;
+static const float alpha = 0.85;
 
 /* treat a cleared input like a wrong password (color) */
 static const int failonclear = 0;

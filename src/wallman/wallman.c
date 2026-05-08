@@ -284,7 +284,7 @@ static void seccomp_apply(void) {
         SC_ALLOW(__NR_read),
         SC_ALLOW(__NR_write),
         SC_ALLOW(__NR_readv),
-        SC_ALLOW(__NR_writev),      /* X11 uses this heavily */
+        SC_ALLOW(__NR_writev),
         SC_ALLOW(__NR_close),
         SC_ALLOW(__NR_fstat),
         SC_ALLOW(__NR_lstat),
@@ -334,10 +334,10 @@ static void seccomp_apply(void) {
         SC_ALLOW(__NR_getpid),
         SC_ALLOW(__NR_exit),
         SC_ALLOW(__NR_exit_group),
-        SC_ALLOW(__NR_futex),       /* glibc internals */
+        SC_ALLOW(__NR_futex),
         SC_ALLOW(__NR_set_robust_list),
         SC_ALLOW(__NR_fcntl),
-        SC_ALLOW(__NR_ioctl),       /* X11 */
+        SC_ALLOW(__NR_ioctl),
         SC_ALLOW(__NR_unlink),      /* socket cleanup */
         SC_ALLOW(__NR_rename),      /* atomic save */
         SC_ALLOW(__NR_fsync),

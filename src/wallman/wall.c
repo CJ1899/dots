@@ -59,9 +59,8 @@ void wall_setup_renderer(void) {
     imlib_context_set_display(display);
     imlib_context_set_visual(DefaultVisual(display, screen));
     imlib_context_set_colormap(DefaultColormap(display, screen));
-    /* Set cache to 64MB */
-    imlib_set_cache_size(64 * 1024 * 1024);
-//    imlib_set_cache_size(0);
+//    imlib_set_cache_size(64 * 1024 * 1024);
+    imlib_set_cache_size(0);
 }
 
 /*static void prefetch_neighbors(void) {
