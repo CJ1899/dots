@@ -16,7 +16,7 @@ struct arg {
     const char *fmt;
     const char *args;
     const int interval;    /* Interval in seconds */
-    char cache[64];        /* Stores the last successful result */
+    char cache[256];        /* Stores the last successful result */
     time_t next_update;    /* Timestamp for the next permitted run */
 };
 

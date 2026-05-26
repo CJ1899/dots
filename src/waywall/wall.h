@@ -23,6 +23,7 @@ void wall_select(const void *arg);
 void wall_reload(const void *arg);
 void wall_folder_select(const void *arg);
 void wall_apply(void);
+void wall_setup_renderer(void);
 
 #endif
 

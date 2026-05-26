@@ -24,14 +24,18 @@ static struct arg args[] = {
 //    { battery_state, " ^c#FFA500^%s",                     "BAT0", 1 },
 //    { battery_perc,  " ^c#FFFFFF^%s%% ^d^| ",              "BAT0", 5 },
 
-    { datetime, " %s ^c#4C566A^  ^d^", "CHR %a %-d %b  %-I:%M %p ", 1 },
+    { datetime, " %s ^c#4C566A^ ^d^", "CHR %a %-d %b  %-I:%M %p ", 1 },
     { battery_state, " %s",                     "BAT0", 1 },
     { battery_perc,  " ^c#FFFFFF^%s%% ^d^^c#4C566A^  ^d^ ",              "BAT0", 5 },
     { wifi_perc, " %s ", "wlan0", 1},
     { wifi_essid, " %s ^c#4C566A^  ^d^", "wlan0", 1},
     { cpu_freq,   " ^c#88C0D0^^d^ ^c#ffffff^%sHz ^d^", NULL, 5},
     { temp,       "^c#ffffff^ %sC ^d^^c#4C566A^  ^d^", "/sys/class/hwmon/hwmon1/temp1_input", 3},
-    { get_wall_info, " %s   ", NULL, 3 },
+    { get_wall_info, " %s ^c#4C566A^  ^d^", NULL, 3 },
+//    { music_status,  "%s   ",           NULL,         1 },
+    { music_status, "%s   ", "nit", 1 },
+
+
 //  { cpu_perc, "%s%% *",NULL,  3 },
 //    { ram_perc, " 󰘚  %s%% ",  NULL,  5 },
 //    { ram_used, " 󰘚 %s ", NULL, 5 },

@@ -144,7 +144,7 @@ static void scan_and_fill(void) {
         if (namelist[i]->d_name[0] != '.') {
             const char *ext = strrchr(namelist[i]->d_name, '.');
             if (ext && (strcasecmp(ext, ".jpg") == 0 || strcasecmp(ext, ".png") == 0 ||
-                        strcasecmp(ext, ".jpeg") == 0 || strcasecmp(ext, ".webp") == 0)) {
+                        strcasecmp(ext, ".jpeg") == 0 || strcasecmp(ext, ".webp") == 0 || strcasecmp(ext, ".ff") == 0 )) {
 
                 struct stat st;
                 char fpath[PATH_MAX];

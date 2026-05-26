@@ -31,6 +31,7 @@ COM =\
 	components/volume\
 	components/wifi\
 	components/bri\
+	components/music\
 	components/wall
 
 all: slstatus

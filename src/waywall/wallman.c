@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <libgen.h>
 #include <ctype.h>
+#include <sys/resource.h>
 
 #include "wall.h"
 
@@ -40,23 +41,38 @@ static int fast_utoa(int val, char *buf) {
 }
 
 static int valid_display(const char *d) {
-    if (!d || *d == '\0') return 0;
-
-    if (*d == '-') return 0;
-
-    for (; *d; d++) {
-        if (!isalnum((unsigned char)*d) && *d != '-' && *d != '_') {
-            return 0;
-        }
+    long val;
+    if (!d || *d != ':') return 0;
+    d++;
+    if (!isdigit((unsigned char)*d)) return 0;
+    val = 0;
+    while (isdigit((unsigned char)*d)) {
+	int digit = *d - '0';
+      if (val > 65535 / 10) return 0;
+      val = val * 10 + digit;
+      if (val > 65535) return 0;
+        d++;
     }
-    return 1;
+    if (*d == '\0') return 1;
+    if (*d != '.') return 0;
+    d++;
+    if (!isdigit((unsigned char)*d)) return 0;
+    val = 0;
+    while (isdigit((unsigned char)*d)) {
+
+       int digit = *d - '0';
+       if (val > 255 / 10) return 0;
+       val = val * 10 + digit;
+       if (val > 255) return 0;
+        d++;
+    }
+    return *d == '\0';
 }
 
 /*
  * get_sock_path — builds the UNIX socket path via memcpy.
  * Format: <XDG_RUNTIME_DIR>/wl-<uid>.<display>.sock
  */
-
 void get_sock_path(char *dest, size_t len, const char *display) {
     const char *runtime = getenv("XDG_RUNTIME_DIR");
     if (!runtime || runtime[0] != '/') {
@@ -64,24 +80,19 @@ void get_sock_path(char *dest, size_t len, const char *display) {
         exit(1);
     }
 
-    /* If display is NULL (not set in env or passed), default to wayland-0 */
-    const char *actual_display = (display && *display) ? display : "wayland-0";
-
-    /* Validate the name before building the path */
-    if (!valid_display(actual_display)) {
-        (void)write(STDERR_FILENO, "Error: Invalid WAYLAND_DISPLAY value\n", 37);
+    if (!display) display = ":0";
+    if (!valid_display(display)) {
+        (void)write(STDERR_FILENO, "Error: Invalid DISPLAY value\n", 29);
         exit(1);
     }
 
     char uid_str[12];
     int  ulen    = fast_utoa((int)getuid(), uid_str);
     size_t rlen  = strlen(runtime);
-    size_t dlen  = strlen(actual_display);
+    size_t dlen  = strlen(display);
 
-    /* Path format: <runtime>/wl-<uid>.<display>.sock */
-    /* total = rlen + "/wl-" (4) + ulen + "." (1) + dlen + ".sock" (5) + \0 (1) */
+    /* runtime + "/wl-" + uid + "." + display + ".sock" + '\0' */
     size_t total = rlen + 4 + (size_t)ulen + 1 + dlen + 5;
-
     if (total >= len) {
         (void)write(STDERR_FILENO, "Error: Socket path too long\n", 28);
         exit(1);
@@ -92,17 +103,21 @@ void get_sock_path(char *dest, size_t len, const char *display) {
     memcpy(ptr, "/wl-",   4);    ptr += 4;
     memcpy(ptr, uid_str,  ulen); ptr += ulen;
     *ptr++ = '.';
-    memcpy(ptr, actual_display,  dlen); ptr += dlen;
-    memcpy(ptr, ".sock",  6);    /* Copy 6 bytes to include the null terminator */
+    memcpy(ptr, display,  dlen); ptr += dlen;
+    memcpy(ptr, ".sock",  6);    /* includes '\0' */
 }
 
 /* ── Landlock sandbox (Linux only) ────────────────────────────────────── */
-/*
+
 #ifdef __linux__
 #include <linux/landlock.h>
+#include <linux/seccomp.h>
+#include <linux/filter.h>
+#include <linux/audit.h>
 #include <sys/syscall.h>
 #include <sys/prctl.h>
 #include <stdint.h>
+#include <stddef.h>
 
 static inline int landlock_create_ruleset(const struct landlock_ruleset_attr *attr,
                                           size_t size, uint32_t flags) {
@@ -116,12 +131,12 @@ static inline int landlock_restrict_self(int rfd, uint32_t flags) {
     return (int)syscall(SYS_landlock_restrict_self, rfd, flags);
 }
 
-
-// * LL_ALLOW — open path with O_PATH, add a landlock rule, then close.
-// * Logs a warning if the path cannot be opened or the rule cannot be added.
-// * Silent failures here are acceptable: sandbox degrades gracefully rather
-// * than preventing the daemon from starting.
-
+/*
+ * LL_ALLOW — open path with O_PATH, add a landlock rule, then close.
+ * Logs a warning if the path cannot be opened or the rule cannot be added.
+ * Silent failures here are acceptable: sandbox degrades gracefully rather
+ * than preventing the daemon from starting.
+ */
 #define LL_ALLOW(path, access) do {                                          \
     int _fd = open((path), O_PATH | O_CLOEXEC);                             \
     if (_fd < 0) {                                                           \
@@ -141,8 +156,7 @@ static inline int landlock_restrict_self(int rfd, uint32_t flags) {
 } while (0)
 
 static void landlock_apply(const char *master_dir,
-                           const char *save_path,
-                           const char *hsetroot_path) {
+                           const char *save_path) {
     int abi = landlock_create_ruleset(NULL, 0, LANDLOCK_CREATE_RULESET_VERSION);
     if (abi < 0) {
         if (errno == ENOSYS)
@@ -165,32 +179,33 @@ static void landlock_apply(const char *master_dir,
         return;
     }
 
-    // Execution & dynamic linker
+    /* Execution & dynamic linker */
     uint64_t exec_bits = LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_EXECUTE;
-    LL_ALLOW(hsetroot_path,                exec_bits);
     LL_ALLOW("/lib64/ld-linux-x86-64.so.2",exec_bits);
     LL_ALLOW("/usr/bin/sh",                exec_bits);
     LL_ALLOW("/etc/ld.so.cache",           LANDLOCK_ACCESS_FS_READ_FILE);
 
-    // System libraries
+    /* System libraries */
     uint64_t lib_bits = LANDLOCK_ACCESS_FS_READ_FILE |
                         LANDLOCK_ACCESS_FS_READ_DIR  |
                         LANDLOCK_ACCESS_FS_EXECUTE;
     LL_ALLOW("/lib",     lib_bits);
     LL_ALLOW("/usr/lib", lib_bits);
     LL_ALLOW("/lib64",   lib_bits);
+    LL_ALLOW("/usr/lib/x86_64-linux-gnu/imlib2", lib_bits);
 
-    // X11 & auth
+    /* X11 & auth */
     LL_ALLOW("/tmp/.X11-unix",
              LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_WRITE_FILE);
+    LL_ALLOW("/usr/share/X11", LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR);
     const char *xauth = getenv("XAUTHORITY");
     if (xauth) LL_ALLOW(xauth, LANDLOCK_ACCESS_FS_READ_FILE);
 
-    // Wallpaper directory
+    /* Wallpaper directory */
     LL_ALLOW(master_dir,
              LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR);
 
-    // Socket directory — safe memcpy before dirname
+    /* Socket directory */
     char s_buf[PATH_MAX];
     size_t slen = strlen(sock_path);
     if (slen < PATH_MAX) {
@@ -203,7 +218,7 @@ static void landlock_apply(const char *master_dir,
         fprintf(stderr, "landlock: sock_path too long, skipping socket dir rule\n");
     }
 
-    // Save-file directory — safe memcpy before dirname
+    /* Save-file directory */
     if (save_path) {
         char sv_buf[PATH_MAX];
         size_t svlen = strlen(save_path);
@@ -219,7 +234,7 @@ static void landlock_apply(const char *master_dir,
         }
     }
 
-    // Enforce
+    /* Enforce */
     if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0)
         fprintf(stderr, "landlock: PR_SET_NO_NEW_PRIVS failed: %s\n", strerror(errno));
 
@@ -230,8 +245,128 @@ static void landlock_apply(const char *master_dir,
 }
 
 #undef LL_ALLOW
-#endif // __linux__
-*/
+
+/* ── Seccomp-BPF sandbox ──────────────────────────────────────────────── */
+
+#define SC_ALLOW(nr) \
+    BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, (nr), 0, 1), \
+    BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW)
+
+#define SC_KILL(nr) \
+    BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, (nr), 0, 1), \
+    BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_KILL_PROCESS)
+
+static void seccomp_apply(void) {
+    struct sock_filter filter[] = {
+        /* Verify arch, kill if not x86-64 */
+        BPF_STMT(BPF_LD|BPF_W|BPF_ABS,
+                 offsetof(struct seccomp_data, arch)),
+        BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, AUDIT_ARCH_X86_64, 1, 0),
+        BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_KILL_PROCESS),
+
+        /* Load syscall number */
+        BPF_STMT(BPF_LD|BPF_W|BPF_ABS,
+                 offsetof(struct seccomp_data, nr)),
+
+        /* ── Hard kills ── */
+        SC_KILL(__NR_ptrace),
+        SC_KILL(__NR_process_vm_readv),
+        SC_KILL(__NR_process_vm_writev),
+        SC_KILL(__NR_kexec_load),
+        SC_KILL(__NR_init_module),
+        SC_KILL(__NR_finit_module),
+        SC_KILL(__NR_delete_module),
+        SC_KILL(__NR_create_module),
+
+        /* ── Allowlist ── */
+
+        /* Core I/O */
+        SC_ALLOW(__NR_read),
+        SC_ALLOW(__NR_write),
+        SC_ALLOW(__NR_readv),
+        SC_ALLOW(__NR_writev),
+        SC_ALLOW(__NR_close),
+        SC_ALLOW(__NR_fstat),
+        SC_ALLOW(__NR_lstat),
+        SC_ALLOW(__NR_stat),
+
+        /* File access */
+        SC_ALLOW(__NR_open),
+        SC_ALLOW(__NR_openat),
+        SC_ALLOW(__NR_getdents64),  /* scandir */
+        SC_ALLOW(__NR_lseek),
+        SC_ALLOW(__NR_pread64),
+
+        /* Memory */
+        SC_ALLOW(__NR_mmap),
+        SC_ALLOW(__NR_munmap),
+        SC_ALLOW(__NR_mprotect),
+        SC_ALLOW(__NR_mremap),      /* Imlib2 */
+        SC_ALLOW(__NR_brk),
+
+        /* Sockets — X11 + Unix domain */
+        SC_ALLOW(__NR_socket),
+        SC_ALLOW(__NR_connect),
+        SC_ALLOW(__NR_accept4),
+        SC_ALLOW(__NR_bind),
+        SC_ALLOW(__NR_listen),
+        SC_ALLOW(__NR_getsockopt),
+        SC_ALLOW(__NR_setsockopt),
+        SC_ALLOW(__NR_getsockname),
+        SC_ALLOW(__NR_sendmsg),
+        SC_ALLOW(__NR_recvmsg),
+        SC_ALLOW(__NR_sendto),
+        SC_ALLOW(__NR_recvfrom),
+
+        /* select/poll/signal */
+        SC_ALLOW(__NR_select),
+        SC_ALLOW(__NR_pselect6),
+        SC_ALLOW(__NR_poll),
+        SC_ALLOW(__NR_ppoll),
+        SC_ALLOW(__NR_rt_sigreturn),
+        SC_ALLOW(__NR_rt_sigaction),
+        SC_ALLOW(__NR_rt_sigprocmask),
+        SC_ALLOW(__NR_signalfd4),
+
+        /* Process/misc */
+        SC_ALLOW(__NR_getuid),
+        SC_ALLOW(__NR_geteuid),
+        SC_ALLOW(__NR_getpid),
+        SC_ALLOW(__NR_exit),
+        SC_ALLOW(__NR_exit_group),
+        SC_ALLOW(__NR_futex),
+        SC_ALLOW(__NR_set_robust_list),
+        SC_ALLOW(__NR_fcntl),
+        SC_ALLOW(__NR_ioctl),
+        SC_ALLOW(__NR_unlink),      /* socket cleanup */
+        SC_ALLOW(__NR_rename),      /* atomic save */
+        SC_ALLOW(__NR_fsync),
+        SC_ALLOW(__NR_umask),
+        SC_ALLOW(__NR_getcwd),
+        SC_ALLOW(__NR_clock_gettime),
+        SC_ALLOW(__NR_nanosleep),
+//	SC_ALLOW(__NR_prctl),
+        SC_ALLOW(__NR_prlimit64),
+	SC_ALLOW(__NR_newfstatat),
+
+        //BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ERRNO | EACCES),
+	BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_KILL_PROCESS),
+    };
+
+    struct sock_fprog prog = {
+        .len    = (unsigned short)(sizeof(filter) / sizeof(filter[0])),
+        .filter = filter,
+    };
+
+    /* PR_SET_NO_NEW_PRIVS already set by landlock_apply */
+    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) != 0)
+        fprintf(stderr, "seccomp: filter failed: %s\n", strerror(errno));
+}
+
+#undef SC_ALLOW
+#undef SC_KILL
+
+#endif /* __linux__ */
 
 /* ── IPC message ──────────────────────────────────────────────────────── */
 
@@ -244,9 +379,9 @@ typedef struct {
 /* ── Signal handling ──────────────────────────────────────────────────── */
 
 static volatile sig_atomic_t running = 1;
-void handle_sig(int sig) { running = 0; }
+void handle_sig(int sig) { (void)sig; running = 0; }
 
-/* ── Command dispatch ─────────────────────────────────────────────────── */
+/* ── Commands ---------─────────────────────────────────────────────────── */
 
 void run_command(char cmd, int target) {
     Arg fwd = { .i =  1 };
@@ -281,7 +416,7 @@ static int parse_duration(const char *str) {
 /* ── main ─────────────────────────────────────────────────────────────── */
 
 int main(int argc, char *argv[]) {
-    const char *display   = getenv("WAYLAND_DISPLAY");
+    const char *display   = getenv("DISPLAY");
     int target_interval   = 0;
     int jump_target       = 0;
     int query_mode        = 0;
@@ -300,8 +435,8 @@ int main(int argc, char *argv[]) {
         else if (!strcmp(argv[argi], "-D")) start_daemon = 1;
         else if (!strcmp(argv[argi], "-h") || !strcmp(argv[argi], "--help")) {
             (void)write(STDOUT_FILENO,
-                "Usage: wl [-S :display] [-y dur] [-j idx] [-i] <cmd>\n"
-                "       wl -D | daemon    (start background daemon)\n"
+                "Usage: wallman [-S :display] [-y dur] [-j idx] [-i] <cmd>\n"
+                "       wallman -D | daemon    (start background daemon)\n"
                 "Commands: next prev rand save reload fnext fprev\n", 120);
             return 0;
         } else break;
@@ -312,8 +447,8 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1) {
         (void)write(STDOUT_FILENO,
-            "Usage: wl [-S :display] [-y dur] [-j idx] [-i] <cmd>\n"
-            "       wl -D | daemon    (start background daemon)\n"
+            "Usage: wallman [-S :display] [-y dur] [-j idx] [-i] <cmd>\n"
+            "       wallman -D | daemon    (start background daemon)\n"
             "Commands: next prev rand save reload fnext fprev\n", 120);
         return 0;
     }
@@ -325,7 +460,7 @@ int main(int argc, char *argv[]) {
 
     get_sock_path(sock_path, sizeof(sock_path), display);
 
-    /* Build sockaddr — memcpy is safe: get_sock_path already verified length */
+    /* Build sockaddr */
     struct sockaddr_un addr = { .sun_family = AF_UNIX };
     size_t slen = strlen(sock_path);
     if (slen >= sizeof(addr.sun_path)) return 1;
@@ -333,7 +468,7 @@ int main(int argc, char *argv[]) {
 
     /* ── Client mode ───────────────────────────────────────────────────── */
     if (argi < argc || jump_target > 0 || query_mode) {
-        int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+        int fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
         if (fd < 0 || connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
             (void)write(STDERR_FILENO,
                         "Error: could not connect to daemon. Is it running?\n", 51);
@@ -374,7 +509,7 @@ int main(int argc, char *argv[]) {
     /* ── Daemon mode ───────────────────────────────────────────────────── */
     if (!start_daemon) return 0;
 
-    /* Bail if a daemon is already running on this display */
+    /* Bail out if a daemon is already running on this display */
     int test_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (test_fd >= 0) {
         if (connect(test_fd, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
@@ -405,11 +540,21 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    wall_setup_renderer();
     wall_restore();
 
-/*#ifdef __linux__
-    landlock_apply(master_dir, get_save_path(), "/usr/bin/waywall");
-#endif*/
+#ifdef __linux__
+    landlock_apply(master_dir, get_save_path());
+
+    struct rlimit rl_zero = {0, 0};
+    setrlimit(RLIMIT_NPROC, &rl_zero);
+
+    prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
+
+    prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
+
+    seccomp_apply();
+#endif
 
     /* ── Event loop ────────────────────────────────────────────────────── */
     while (running) {
@@ -439,14 +584,18 @@ int main(int argc, char *argv[]) {
         }
 
         WallMsg m = {0};
-        if (recv(client_fd, &m, sizeof(WallMsg), MSG_WAITALL) == sizeof(WallMsg)) {
+        if (/*recv(client_fd, &m, sizeof(WallMsg), MSG_WAITALL)*/ recv(client_fd, &m, sizeof(WallMsg), 0) == sizeof(WallMsg)) {
             if (m.cmd == 'i') {
-                /* Build query response with memcpy + fast_utoa (no snprintf) */
+                /* Build query response with memcpy + fast_utoa */
                 char resp[512];
                 char cur_str[12], tot_str[12];
                 int  clen = fast_utoa(cur + 1, cur_str);
                 int  tlen = fast_utoa(count,   tot_str);
                 size_t flen = strlen(current_folder);
+		size_t needed = 3 + clen + 1 + tlen;
+
+                if (flen > sizeof(resp) - needed)
+                    flen = sizeof(resp) - needed;
 
                 char *ptr = resp;
                 memcpy(ptr, current_folder, flen); ptr += flen;

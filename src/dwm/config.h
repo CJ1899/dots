@@ -2,7 +2,7 @@
 #define TERMCLASS "St"
 #define BROWSER "firefox"
 
-static const unsigned int borderpx  = 1;        /* border pixel of windows */
+static const unsigned int borderpx  = 0;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const unsigned int gappih    = 20;       /* horiz inner gap between windows */
 static const unsigned int gappiv    = 20;       /* vert inner gap between windows */
@@ -24,8 +24,8 @@ static unsigned int borderalpha     = OPAQUE;
 //static const char *tags[] = { "", "", "", "", "", "", "", "", "", "", "", "", ""};
 //static const char *tags[] = { "", "", "", "", "", "", "", "", "", "",};
 //static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "*"};
-//static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "*"};
-static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X "};
+static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "*"};
+//static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X "};
 //static const char *tags[] = { "일", "이", "삼", "사", "오", "육", "칠", "팔", "구" };
 //static const char *tags[] = { "一", "二", "三", "四", "五", "六", "七", "八", "九" };
 

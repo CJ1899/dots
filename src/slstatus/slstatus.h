@@ -88,4 +88,5 @@ const char *nets_status(const char *unused);
 
 const char *bri_perc(const char *unused);
 const char *get_wall_info(const char *unused);
+const char *music_status(const char *unused);
 

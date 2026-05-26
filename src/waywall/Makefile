@@ -1,13 +1,21 @@
 CC = gcc
-CFLAGS = -O3 -Wall
-TARGET = waywall
+# Added -D_GNU_SOURCE to ensure all system features are available
+CFLAGS = -fPIE -pie -Wl,-z,relro,-z,now -fstack-protector-strong -march=native -flto -O3 -Wall -Wextra $(shell pkg-config --cflags imlib2 x11 xinerama wayland-client)
+LIBS = $(shell pkg-config --libs imlib2 x11 xinerama wayland-client) -lXext
+
+TARGET = wallman
 SRC = wallman.c wall.c
 OBJ = $(SRC:.c=.o)
 
 all: $(TARGET)
 
+# Generic rule to compile .c files into .o files
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Link the target - CRITICAL: $(LIBS) must be at the end
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) $(LIBS)
 
 clean:
 	rm -f $(TARGET) $(OBJ)

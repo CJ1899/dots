@@ -6,7 +6,9 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = "Terminus:pixelsize=14:antialias=false:autohint=false";
+//static char *font = "JetBrainsMono:pixelsize=14:antialias=true:autohint=false";
 static char *font2[] = { "Terminus:pixelsize=12:antialias=false:autohint=false" };
+//static char *font2[] = { "JetBrainsMono:pixelsize=12:antialias=true:autohint=false" };
 static int borderpx = 5;
 
 /*
@@ -144,6 +146,7 @@ static const char *colorname[] = {
 	"#8ae234",
 	"#fce94f",
 	"#729fcf",
+//	"#31748f",
 	"#ad7fa8",
 	"#34e2e2",
 	"#eeeeec",
