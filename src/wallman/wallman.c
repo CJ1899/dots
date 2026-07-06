@@ -374,6 +374,7 @@ typedef struct {
     char cmd;
     int  interval;
     int  target;
+//    char path[PATH_MAX];
 } WallMsg;
 
 /* ── Signal handling ──────────────────────────────────────────────────── */
@@ -394,6 +395,11 @@ void run_command(char cmd, int target) {
         case 'u': wall_folder_select(&fwd);break;
         case 'd': wall_folder_select(&bwd);break;
         case 'R': wall_reload(NULL);       break;
+//	case 'f':
+//        if (path && path[0] != '\0') {
+            // Bypass index logic: just set the file directly
+//            run_setter(path);
+//        }
         case 'j':
             if (target > 0 && target <= count) {
                 cur = target - 1;
@@ -488,6 +494,7 @@ int main(int argc, char *argv[]) {
             else if (!strcmp(arg, "fprev")  || !strcmp(arg, "-d")) msg.cmd = 'd';
             else if (!strcmp(arg, "save")   || !strcmp(arg, "-s")) msg.cmd = 's';
             else if (!strcmp(arg, "reload") || !strcmp(arg, "-R")) msg.cmd = 'R';
+//            else if (!strcmp(arg, "fset")   || !strcmp(arg, "-f")) msg.cmd = 'f';
             else msg.cmd = arg[0];
         }
 
@@ -584,9 +591,9 @@ int main(int argc, char *argv[]) {
         }
 
         WallMsg m = {0};
+
         if (/*recv(client_fd, &m, sizeof(WallMsg), MSG_WAITALL)*/ recv(client_fd, &m, sizeof(WallMsg), 0) == sizeof(WallMsg)) {
             if (m.cmd == 'i') {
-                /* Build query response with memcpy + fast_utoa */
                 char resp[512];
                 char cur_str[12], tot_str[12];
                 int  clen = fast_utoa(cur + 1, cur_str);
@@ -605,7 +612,8 @@ int main(int argc, char *argv[]) {
                 memcpy(ptr, tot_str, (size_t)tlen);ptr += tlen;
                 (void)write(client_fd, resp, (size_t)(ptr - resp));
 
-            } else if (strchr("nprsmudRj", m.cmd)) {
+            }
+	    else if (strchr("nprsmudRj", m.cmd)) {
                 if (m.interval >= 0)
                     slideshow_interval = (m.interval > 86400) ? 86400 : m.interval;
                 if (strchr("npr", m.cmd))
